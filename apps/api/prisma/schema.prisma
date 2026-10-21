@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+}
+enum Role {
+  ADMIN
+  IT_STAFF
+  VIEWER
+}
+enum AssetStatus {
+  AVAILABLE
+  ASSIGNED
+  MAINTENANCE
+  RETIRED
+}
+enum EmploymentStatus {
+  ACTIVE
+  OFFBOARDING
+  INACTIVE
+}
+model User {
+  id String @id @default(uuid())
+  email String @unique
+  name String
+  passwordHash String
+  role Role @default(VIEWER)
+  active Boolean @default(true)
+  createdAt DateTime @default(now())
+  sessions Session[]
+  assignments AssetAssignment[] @relation("CheckoutActor")
+  returns AssetAssignment[] @relation("CheckinActor")
+  maintenance MaintenanceRecord[]
+  offboardings Offboarding[] @relation("OffboardingActor")
+  completedOffboardings Offboarding[] @relation("OffboardingCompleter")
+  auditLogs AuditLog[]
+}
+model Session {
+  id String @id @default(uuid())
+  tokenHash String @unique
+  csrfToken String
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([expiresAt])
+}
+model Department {
+  id String @id @default(uuid())
+  name String @unique
+  employees Employee[]
+}
+model Employee {
+  id String @id @default(uuid())
+  employeeNumber String @unique
+  name String
+  departmentId String
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  title String?
+  email String @unique
+  status EmploymentStatus @default(ACTIVE)
+  joinedAt DateTime @db.Date
+  leftAt DateTime? @db.Date
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  assignments AssetAssignment[]
+  offboardings Offboarding[]
+  @@index([departmentId, status])
+}
+model AssetCategory {
+  id String @id @default(uuid())
+  name String @unique
+  assets Asset[]
+}
+model Asset {
+  id String @id @default(uuid())
+  assetTag String @unique
+  name String
+  categoryId String
+  category AssetCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  brand String
+  model String
+  serialNumber String? @unique
+  purchasedAt DateTime @db.Date
+  purchasePrice Decimal? @db.Decimal(12, 2)
+  warrantyUntil DateTime? @db.Date
+  location String
+  status AssetStatus @default(AVAILABLE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  assignments AssetAssignment[]
+  maintenance MaintenanceRecord[]
+  @@index([status, categoryId])
+  @@index([createdAt])
+}
+model AssetAssignment {
+  id String @id @default(uuid())
+  assetId String
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  employeeId String
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  checkoutById String
+  checkoutBy User @relation("CheckoutActor", fields: [checkoutById], references: [id], onDelete: Restrict)
+  checkedOutAt DateTime @default(now())
+  expectedReturnAt DateTime? @db.Date
+  checkoutNotes String?
+  returnedAt DateTime?
+  checkinById String?
+  checkinBy User? @relation("CheckinActor", fields: [checkinById], references: [id], onDelete: Restrict)
+  condition String?
+  checkinNotes String?
+  @@index([employeeId, returnedAt])
+  @@index([expectedReturnAt, returnedAt])
+}
+model MaintenanceRecord {
+  id String @id @default(uuid())
+  assetId String
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  operatorId String
+  operator User @relation(fields: [operatorId], references: [id], onDelete: Restrict)
+  description String
+  progress String @default("待檢修")
+  startedAt DateTime @default(now())
+  completedAt DateTime?
+  notes String?
+  outcome AssetStatus?
+  @@index([assetId, completedAt])
+}
+model Offboarding {
+  id String @id @default(uuid())
+  employeeId String
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  operatorId String
+  operator User @relation("OffboardingActor", fields: [operatorId], references: [id], onDelete: Restrict)
+  startedAt DateTime @default(now())
+  plannedLeaveAt DateTime @db.Date
+  completedAt DateTime?
+  completedById String?
+  completedBy User? @relation("OffboardingCompleter", fields: [completedById], references: [id], onDelete: Restrict)
+  notes String?
+  @@index([employeeId, completedAt])
+}
+model AuditLog {
+  id String @id @default(uuid())
+  action String
+  targetType String
+  targetId String
+  actorId String
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  changes Json
+  result String @default("SUCCESS")
+  @@index([targetType, targetId, createdAt])
+  @@index([createdAt])
+}
