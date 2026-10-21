@@ -1,20 +1,167 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { Plus, Search, Package, ArrowUpRight } from '@lucide/vue';
-import { statuses, statusLabels } from '@assetflow/shared';
-import { useCollection, useResource } from '../composables/data';
-import { useAuth } from '../stores/auth';
-import { api } from '../api/client';
-import { assetFields, assetInitial, assetPayload } from '../composables/forms';
-import type { Asset, Lookups } from '../types';
-import AsyncState from '../components/AsyncState.vue';
-import StatusBadge from '../components/StatusBadge.vue';
-import Pagination from '../components/Pagination.vue';
-import FormDialog from '../components/FormDialog.vue';
-const { data, loading, error, page, filters, reload } = useCollection<Asset>('/assets');
-const lookups = useResource<Lookups>(() => '/lookups'), auth = useAuth(), dialog = ref<InstanceType<typeof FormDialog>>(), success = ref(''), route = useRoute(), router = useRouter();
-function create() { if (!lookups.data.value) return; void dialog.value?.open({ title: '新增資產', description: '建立設備基本資料，之後即可進行領用與生命週期管理。', fields: assetFields(lookups.data.value), initial: assetInitial(), submitLabel: '建立資產', onSubmit: async values => { await api('/assets', { method: 'POST', body: assetPayload(values) }); success.value = '資產已成功建立。'; await reload(); } }); }
-watch([() => route.query.create, lookups.data], ([requested, lookup]) => { if (requested && lookup && auth.canWrite) { create(); void router.replace('/assets'); } });
+import { ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { Plus, Search, Package, ArrowUpRight } from "@lucide/vue";
+import { statuses, statusLabels } from "@assetflow/shared";
+import { useCollection, useResource } from "../composables/data";
+import { useAuth } from "../stores/auth";
+import { api } from "../api/client";
+import { assetFields, assetInitial, assetPayload } from "../composables/forms";
+import type { Asset, Lookups } from "../types";
+import AsyncState from "../components/AsyncState.vue";
+import StatusBadge from "../components/StatusBadge.vue";
+import Pagination from "../components/Pagination.vue";
+import FormDialog from "../components/FormDialog.vue";
+const { data, loading, error, page, filters, reload } =
+  useCollection<Asset>("/assets");
+const lookups = useResource<Lookups>(() => "/lookups"),
+  auth = useAuth(),
+  dialog = ref<InstanceType<typeof FormDialog>>(),
+  success = ref(""),
+  route = useRoute(),
+  router = useRouter();
+function create() {
+  if (!lookups.data.value) return;
+  void dialog.value?.open({
+    title: "新增資產",
+    description: "建立設備基本資料，之後即可進行領用與生命週期管理。",
+    fields: assetFields(lookups.data.value),
+    initial: assetInitial(),
+    submitLabel: "建立資產",
+    onSubmit: async (values) => {
+      await api("/assets", { method: "POST", body: assetPayload(values) });
+      success.value = "資產已成功建立。";
+      await reload();
+    },
+  });
+}
+watch([() => route.query.create, lookups.data], ([requested, lookup]) => {
+  if (requested && lookup && auth.canWrite) {
+    create();
+    void router.replace("/assets");
+  }
+});
 </script>
-<template><div class="page-heading"><div><span class="eyebrow">ASSET INVENTORY</span><h1>資產管理<span class="heading-dot">.</span></h1><p>集中掌握設備、位置與保管人，讓每次流轉有跡可循。</p></div><button v-if="auth.canWrite" class="btn" :disabled="!lookups.data.value" @click="create"><Plus :size="17" />新增資產</button></div><p v-if="success" class="notice" role="status">{{ success }}</p><p v-if="lookups.error.value" class="inline-error" role="alert">{{ lookups.error.value }} <button class="text-button" @click="lookups.reload">重試選項</button></p><section class="panel"><div class="list-toolbar"><div class="search-input"><Search :size="18" /><input v-model="filters.search" type="search" aria-label="搜尋資產" placeholder="搜尋名稱、編號、品牌或序號…"></div><select v-model="filters.status" aria-label="資產狀態"><option value="">所有狀態</option><option v-for="s in statuses" :key="s" :value="s">{{ statusLabels[s] }}</option></select><select v-model="filters.categoryId" aria-label="資產分類"><option value="">所有分類</option><option v-for="c in lookups.data.value?.categories" :key="c.id" :value="c.id">{{ c.name }}</option></select><select v-model="filters.sort" aria-label="資產排序"><option value="createdAt">建立時間</option><option value="name">資產名稱</option><option value="assetTag">資產編號</option></select><select v-model="filters.order" aria-label="排序方向"><option value="desc">由大到小</option><option value="asc">由小到大</option></select></div><AsyncState :loading="loading" :error="error" :empty="!data?.items.length" @retry="reload"><div class="table-scroll"><table><thead><tr><th>資產 / 編號</th><th>分類</th><th>狀態</th><th>目前保管人</th><th>存放位置</th><th><span class="sr-only">操作</span></th></tr></thead><tbody><tr v-for="asset in data?.items" :key="asset.id"><td><RouterLink :to="`/assets/${asset.id}`" class="entity-cell"><span class="device-icon"><Package :size="20" /></span><div><strong>{{ asset.name }}</strong><small class="mono">{{ asset.assetTag }}</small></div></RouterLink></td><td class="muted">{{ asset.category.name }}</td><td><StatusBadge :status="asset.status" /></td><td><RouterLink v-if="asset.assignments[0]" :to="`/employees/${asset.assignments[0].employeeId}`" class="person-cell"><span class="avatar tiny">{{ asset.assignments[0].employee.name.slice(0, 1) }}</span>{{ asset.assignments[0].employee.name }}</RouterLink><span v-else class="muted">未指派</span></td><td class="muted">{{ asset.location }}</td><td><RouterLink :to="`/assets/${asset.id}`" class="icon-button" :aria-label="`查看 ${asset.assetTag}`"><ArrowUpRight :size="18" /></RouterLink></td></tr></tbody></table></div></AsyncState><Pagination v-if="data" v-model:page="page" :total="data.total" /></section><FormDialog ref="dialog" /></template>
+<template>
+  <div class="page-heading">
+    <div>
+      <span class="eyebrow">ASSET INVENTORY</span>
+      <h1>資產管理<span class="heading-dot">.</span></h1>
+      <p>集中掌握設備、位置與保管人，讓每次流轉有跡可循。</p>
+    </div>
+    <button
+      v-if="auth.canWrite"
+      class="btn"
+      :disabled="!lookups.data.value"
+      @click="create"
+    >
+      <Plus :size="17" />新增資產
+    </button>
+  </div>
+  <p v-if="success" class="notice" role="status">{{ success }}</p>
+  <p v-if="lookups.error.value" class="inline-error" role="alert">
+    {{ lookups.error.value }}
+    <button class="text-button" @click="lookups.reload">重試選項</button>
+  </p>
+  <section class="panel">
+    <div class="list-toolbar">
+      <div class="search-input">
+        <Search :size="18" /><input
+          v-model="filters.search"
+          type="search"
+          aria-label="搜尋資產"
+          placeholder="搜尋名稱、編號、品牌或序號…"
+        >
+      </div>
+      <select v-model="filters.status" aria-label="資產狀態">
+        <option value="">所有狀態</option>
+        <option v-for="s in statuses" :key="s" :value="s">
+          {{ statusLabels[s] }}
+        </option>
+</select
+      ><select v-model="filters.categoryId" aria-label="資產分類">
+        <option value="">所有分類</option>
+        <option
+          v-for="c in lookups.data.value?.categories"
+          :key="c.id"
+          :value="c.id"
+        >
+          {{ c.name }}
+        </option>
+</select
+      ><select v-model="filters.sort" aria-label="資產排序">
+        <option value="createdAt">建立時間</option>
+        <option value="name">資產名稱</option>
+        <option value="assetTag">資產編號</option>
+</select
+      ><select v-model="filters.order" aria-label="排序方向">
+        <option value="desc">由大到小</option>
+        <option value="asc">由小到大</option>
+      </select>
+    </div>
+    <AsyncState
+      :loading="loading"
+      :error="error"
+      :empty="!data?.items.length"
+      @retry="reload"
+      >
+<div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>資產 / 編號</th>
+              <th>分類</th>
+              <th>狀態</th>
+              <th>目前保管人</th>
+              <th>存放位置</th>
+              <th><span class="sr-only">操作</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="asset in data?.items" :key="asset.id">
+              <td>
+                <RouterLink :to="`/assets/${asset.id}`" class="entity-cell"
+                  >
+<span class="device-icon"><Package :size="20" /></span>
+                  <div>
+                    <strong>{{ asset.name }}</strong
+                    ><small class="mono">{{ asset.assetTag }}</small>
+                  </div>
+</RouterLink
+                >
+              </td>
+              <td class="muted">{{ asset.category.name }}</td>
+              <td><StatusBadge :status="asset.status" /></td>
+              <td>
+                <RouterLink
+                  v-if="asset.assignments[0]"
+                  :to="`/employees/${asset.assignments[0].employeeId}`"
+                  class="person-cell"
+                  >
+<span class="avatar tiny">{{
+                    asset.assignments[0].employee.name.slice(0, 1)
+                  }}</span
+                  >{{ asset.assignments[0].employee.name }}
+</RouterLink
+                ><span v-else class="muted">未指派</span>
+              </td>
+              <td class="muted">{{ asset.location }}</td>
+              <td>
+                <RouterLink
+                  :to="`/assets/${asset.id}`"
+                  class="icon-button"
+                  :aria-label="`查看 ${asset.assetTag}`"
+                  >
+<ArrowUpRight :size="18"
+                />
+</RouterLink>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+</div>
+</AsyncState
+    ><Pagination v-if="data" v-model:page="page" :total="data.total" />
+  </section>
+  <FormDialog ref="dialog" />
+</template>

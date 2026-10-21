@@ -1,16 +1,156 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Plus, Search, ArrowUpRight } from '@lucide/vue';
-import { useCollection, useResource } from '../composables/data';
-import { useAuth } from '../stores/auth';
-import { api } from '../api/client';
-import { employeeFields, employeeInitial } from '../composables/forms';
-import { type Employee, type Lookups, employmentLabels } from '../types';
-import AsyncState from '../components/AsyncState.vue';
-import StatusBadge from '../components/StatusBadge.vue';
-import Pagination from '../components/Pagination.vue';
-import FormDialog from '../components/FormDialog.vue';
-const { data, loading, error, page, filters, reload } = useCollection<Employee>('/employees'), lookups = useResource<Lookups>(() => '/lookups'), auth = useAuth(), dialog = ref<InstanceType<typeof FormDialog>>(), success = ref('');
-function create() { if (!lookups.data.value) return; void dialog.value?.open({ title: '建立員工', description: '員工資料與系統登入帳號獨立；建立員工不會自動開立帳號。', fields: employeeFields(lookups.data.value), initial: employeeInitial(), submitLabel: '建立員工', onSubmit: async v => { await api('/employees', { method: 'POST', body: v }); success.value = '員工資料已建立。'; await reload(); } }); }
+import { ref } from "vue";
+import { Plus, Search, ArrowUpRight } from "@lucide/vue";
+import { useCollection, useResource } from "../composables/data";
+import { useAuth } from "../stores/auth";
+import { api } from "../api/client";
+import { employeeFields, employeeInitial } from "../composables/forms";
+import { type Employee, type Lookups, employmentLabels } from "../types";
+import AsyncState from "../components/AsyncState.vue";
+import StatusBadge from "../components/StatusBadge.vue";
+import Pagination from "../components/Pagination.vue";
+import FormDialog from "../components/FormDialog.vue";
+const { data, loading, error, page, filters, reload } =
+    useCollection<Employee>("/employees"),
+  lookups = useResource<Lookups>(() => "/lookups"),
+  auth = useAuth(),
+  dialog = ref<InstanceType<typeof FormDialog>>(),
+  success = ref("");
+function create() {
+  if (!lookups.data.value) return;
+  void dialog.value?.open({
+    title: "建立員工",
+    description: "員工資料與系統登入帳號獨立；建立員工不會自動開立帳號。",
+    fields: employeeFields(lookups.data.value),
+    initial: employeeInitial(),
+    submitLabel: "建立員工",
+    onSubmit: async (v) => {
+      await api("/employees", { method: "POST", body: v });
+      success.value = "員工資料已建立。";
+      await reload();
+    },
+  });
+}
 </script>
-<template><div class="page-heading"><div><span class="eyebrow">PEOPLE DIRECTORY</span><h1>員工目錄<span class="heading-dot">.</span></h1><p>掌握團隊成員與持有設備，讓報到到交接都順暢。</p></div><button v-if="auth.canWrite" class="btn" :disabled="!lookups.data.value" @click="create"><Plus :size="17" />建立員工</button></div><p v-if="success" class="notice" role="status">{{ success }}</p><p v-if="lookups.error.value" class="inline-error" role="alert">{{ lookups.error.value }} <button class="text-button" @click="lookups.reload">重試選項</button></p><section class="panel"><div class="list-toolbar"><div class="search-input"><Search :size="18" /><input v-model="filters.search" type="search" aria-label="搜尋員工" placeholder="搜尋姓名、員工編號或電子郵件…"></div><select v-model="filters.departmentId" aria-label="員工部門"><option value="">所有部門</option><option v-for="d in lookups.data.value?.departments" :key="d.id" :value="d.id">{{ d.name }}</option></select><select v-model="filters.status" aria-label="在職狀態"><option value="">所有狀態</option><option v-for="(label, value) in employmentLabels" :key="value" :value="value">{{ label }}</option></select><select v-model="filters.sort" aria-label="員工排序"><option value="createdAt">建立時間</option><option value="name">姓名</option><option value="employeeNumber">員工編號</option></select><select v-model="filters.order" aria-label="排序方向"><option value="desc">由大到小</option><option value="asc">由小到大</option></select></div><AsyncState :loading="loading" :error="error" :empty="!data?.items.length" @retry="reload"><div class="table-scroll"><table><thead><tr><th>員工</th><th>部門 / 職稱</th><th>聯絡方式</th><th>在職狀態</th><th>持有設備</th><th><span class="sr-only">查看詳情</span></th></tr></thead><tbody><tr v-for="e in data?.items" :key="e.id"><td><RouterLink :to="`/employees/${e.id}`" class="entity-cell"><span class="avatar">{{ e.name.slice(0, 1) }}</span><div><strong>{{ e.name }}</strong><small class="mono">{{ e.employeeNumber }}</small></div></RouterLink></td><td>{{ e.department.name }}<small class="block muted">{{ e.title ?? '—' }}</small></td><td class="muted">{{ e.email }}</td><td><StatusBadge :status="e.status" /></td><td><span class="count-pill">{{ e._count?.assignments ?? 0 }} 項</span></td><td><RouterLink :to="`/employees/${e.id}`" class="icon-button" :aria-label="`查看 ${e.name}`"><ArrowUpRight :size="18" /></RouterLink></td></tr></tbody></table></div></AsyncState><Pagination v-if="data" v-model:page="page" :total="data.total" /></section><FormDialog ref="dialog" /></template>
+<template>
+  <div class="page-heading">
+    <div>
+      <span class="eyebrow">PEOPLE DIRECTORY</span>
+      <h1>員工目錄<span class="heading-dot">.</span></h1>
+      <p>掌握團隊成員與持有設備，讓報到到交接都順暢。</p>
+    </div>
+    <button
+      v-if="auth.canWrite"
+      class="btn"
+      :disabled="!lookups.data.value"
+      @click="create"
+    >
+      <Plus :size="17" />建立員工
+    </button>
+  </div>
+  <p v-if="success" class="notice" role="status">{{ success }}</p>
+  <p v-if="lookups.error.value" class="inline-error" role="alert">
+    {{ lookups.error.value }}
+    <button class="text-button" @click="lookups.reload">重試選項</button>
+  </p>
+  <section class="panel">
+    <div class="list-toolbar">
+      <div class="search-input">
+        <Search :size="18" /><input
+          v-model="filters.search"
+          type="search"
+          aria-label="搜尋員工"
+          placeholder="搜尋姓名、員工編號或電子郵件…"
+        >
+      </div>
+      <select v-model="filters.departmentId" aria-label="員工部門">
+        <option value="">所有部門</option>
+        <option
+          v-for="d in lookups.data.value?.departments"
+          :key="d.id"
+          :value="d.id"
+        >
+          {{ d.name }}
+        </option>
+</select
+      ><select v-model="filters.status" aria-label="在職狀態">
+        <option value="">所有狀態</option>
+        <option
+          v-for="(label, value) in employmentLabels"
+          :key="value"
+          :value="value"
+        >
+          {{ label }}
+        </option>
+</select
+      ><select v-model="filters.sort" aria-label="員工排序">
+        <option value="createdAt">建立時間</option>
+        <option value="name">姓名</option>
+        <option value="employeeNumber">員工編號</option>
+</select
+      ><select v-model="filters.order" aria-label="排序方向">
+        <option value="desc">由大到小</option>
+        <option value="asc">由小到大</option>
+      </select>
+    </div>
+    <AsyncState
+      :loading="loading"
+      :error="error"
+      :empty="!data?.items.length"
+      @retry="reload"
+      >
+<div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>員工</th>
+              <th>部門 / 職稱</th>
+              <th>聯絡方式</th>
+              <th>在職狀態</th>
+              <th>持有設備</th>
+              <th><span class="sr-only">查看詳情</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="e in data?.items" :key="e.id">
+              <td>
+                <RouterLink :to="`/employees/${e.id}`" class="entity-cell"
+                  >
+<span class="avatar">{{ e.name.slice(0, 1) }}</span>
+                  <div>
+                    <strong>{{ e.name }}</strong
+                    ><small class="mono">{{ e.employeeNumber }}</small>
+                  </div>
+</RouterLink
+                >
+              </td>
+              <td>
+                {{ e.department.name
+                }}<small class="block muted">{{ e.title ?? "—" }}</small>
+              </td>
+              <td class="muted">{{ e.email }}</td>
+              <td><StatusBadge :status="e.status" /></td>
+              <td>
+                <span class="count-pill"
+                  >{{ e._count?.assignments ?? 0 }} 項</span
+                >
+              </td>
+              <td>
+                <RouterLink
+                  :to="`/employees/${e.id}`"
+                  class="icon-button"
+                  :aria-label="`查看 ${e.name}`"
+                  >
+<ArrowUpRight :size="18"
+                />
+</RouterLink>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+</div>
+</AsyncState
+    ><Pagination v-if="data" v-model:page="page" :total="data.total" />
+  </section>
+  <FormDialog ref="dialog" />
+</template>

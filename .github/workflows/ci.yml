@@ -1,0 +1,72 @@
+name: AssetFlow Quality
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: assetflow
+          POSTGRES_PASSWORD: ci_isolated_only
+          POSTGRES_DB: assetflow_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U assetflow"
+          --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://assetflow:ci_isolated_only@localhost:5432/assetflow_test
+      TEST_DATABASE_URL: postgresql://assetflow:ci_isolated_only@localhost:5432/assetflow_test
+      APP_ORIGIN: http://localhost:5173
+      DEMO_SEED: "true"
+      DEMO_PASSWORD: CI-Only-AssetFlow-2026!
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run db:migrate
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:api
+      - run: npm run build
+      - run: npm run db:seed
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - run: npm audit --audit-level=moderate
+      - name: Browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-evidence
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      POSTGRES_PASSWORD: compose_ci_only
+      APP_ORIGIN: http://localhost:3001
+      DEMO_SEED: "true"
+      DEMO_PASSWORD: Docker-Only-AssetFlow-2026!
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose up --build -d --wait
+      - run: docker compose exec -T app npm run db:seed
+      - run: curl --fail --retry 15 --retry-delay 2 --retry-connrefused http://localhost:3001/health
+      - run: curl --fail http://localhost:3001/ > /dev/null
+      - run: docker compose logs
+        if: failure()
+      - run: docker compose down -v
+        if: always()

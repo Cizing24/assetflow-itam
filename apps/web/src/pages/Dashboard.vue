@@ -1,13 +1,238 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { Package, ArrowUpRight, ArrowLeftRight, Wrench, Plus, ClipboardCheck, CheckCircle2 } from '@lucide/vue';
-import { statusLabels, type AssetStatus } from '@assetflow/shared';
-import { useResource } from '../composables/data';
-import { useAuth } from '../stores/auth';
-import { type DashboardData, dateLabel, dateTimeLabel, actionLabels } from '../types';
-import AsyncState from '../components/AsyncState.vue';
-const auth = useAuth(); const { data, loading, error, reload } = useResource<DashboardData>(() => '/dashboard');
-const distribution = computed(() => { if (!data.value?.total) return '#edf0eb'; let cursor = 0; const colors = { AVAILABLE: '#b8d5b2', ASSIGNED: '#244e43', MAINTENANCE: '#e8bd72', RETIRED: '#dce1d9' }; return `conic-gradient(${Object.entries(data.value.counts).map(([s, n]) => { const start = cursor; cursor += n / data.value!.total * 100; return `${colors[s as AssetStatus]} ${start}% ${cursor}%`; }).join(',')})`; });
-const metrics = computed(() => data.value ? [{ label: '資產總數', value: data.value.total, icon: Package, caption: '所有已登錄設備', color: 'sage' }, { label: '可借出設備', value: data.value.counts.AVAILABLE, icon: CheckCircle2, caption: '隨時為團隊準備就緒', color: 'green' }, { label: '已領用設備', value: data.value.counts.ASSIGNED, icon: ArrowLeftRight, caption: `在用資產使用率 ${data.value.utilization}%`, color: 'blue' }, { label: '維修中設備', value: data.value.counts.MAINTENANCE, icon: Wrench, caption: '持續追蹤，妥善維護', color: 'amber' }] : []);
+import { computed } from "vue";
+import {
+  Package,
+  ArrowUpRight,
+  ArrowLeftRight,
+  Wrench,
+  Plus,
+  ClipboardCheck,
+  CheckCircle2,
+} from "@lucide/vue";
+import { statusLabels, type AssetStatus } from "@assetflow/shared";
+import { useResource } from "../composables/data";
+import { useAuth } from "../stores/auth";
+import {
+  type DashboardData,
+  dateLabel,
+  dateTimeLabel,
+  actionLabels,
+} from "../types";
+import AsyncState from "../components/AsyncState.vue";
+const auth = useAuth();
+const { data, loading, error, reload } = useResource<DashboardData>(
+  () => "/dashboard",
+);
+const distribution = computed(() => {
+  if (!data.value?.total) return "#edf0eb";
+  let cursor = 0;
+  const colors = {
+    AVAILABLE: "#b8d5b2",
+    ASSIGNED: "#244e43",
+    MAINTENANCE: "#e8bd72",
+    RETIRED: "#dce1d9",
+  };
+  return `conic-gradient(${Object.entries(data.value.counts)
+    .map(([s, n]) => {
+      const start = cursor;
+      cursor += (n / data.value!.total) * 100;
+      return `${colors[s as AssetStatus]} ${start}% ${cursor}%`;
+    })
+    .join(",")})`;
+});
+const metrics = computed(() =>
+  data.value
+    ? [
+        {
+          label: "資產總數",
+          value: data.value.total,
+          icon: Package,
+          caption: "所有已登錄設備",
+          color: "sage",
+        },
+        {
+          label: "可借出設備",
+          value: data.value.counts.AVAILABLE,
+          icon: CheckCircle2,
+          caption: "隨時為團隊準備就緒",
+          color: "green",
+        },
+        {
+          label: "已領用設備",
+          value: data.value.counts.ASSIGNED,
+          icon: ArrowLeftRight,
+          caption: `在用資產使用率 ${data.value.utilization}%`,
+          color: "blue",
+        },
+        {
+          label: "維修中設備",
+          value: data.value.counts.MAINTENANCE,
+          icon: Wrench,
+          caption: "持續追蹤，妥善維護",
+          color: "amber",
+        },
+      ]
+    : [],
+);
 </script>
-<template><div class="page-heading"><div><div class="eyebrow">YOUR WORKSPACE, AT A GLANCE</div><h1>讓每一項資產，流轉有序<span class="heading-dot">.</span></h1><p>歡迎回來，{{ auth.user?.name }}。這是工作空間的最新狀況。</p></div><RouterLink v-if="auth.canWrite" class="btn" to="/assets?create=1"><Plus :size="17" /> 新增資產</RouterLink></div><AsyncState :loading="loading" :error="error" @retry="reload"><template v-if="data"><div class="metric-grid"><article v-for="metric in metrics" :key="metric.label" class="metric-card"><div class="metric-top"><span>{{ metric.label }}</span><span class="metric-icon" :class="metric.color"><component :is="metric.icon" :size="19" /></span></div><strong class="metric-value">{{ metric.value }}<small>項</small></strong><p>{{ metric.caption }}</p></article></div><div class="dashboard-middle"><section class="panel distribution"><div class="panel-heading"><div><h2>資產狀態分布</h2><p>掌握設備的每個生命週期階段</p></div><span class="subtle-tag">即時統計</span></div><div class="distribution-content"><div class="donut" :style="{ background: distribution }" role="img" :aria-label="`資產總數 ${data.total}；已領用 ${data.counts.ASSIGNED}；可借出 ${data.counts.AVAILABLE}；維修 ${data.counts.MAINTENANCE}；除役 ${data.counts.RETIRED}`"><div><strong>{{ data.total }}</strong><span>資產總數</span></div></div><div class="legend"><div v-for="(count, status) in data.counts" :key="status"><span class="legend-dot" :class="status.toLowerCase()" /><span>{{ statusLabels[status] }}</span><strong>{{ count }}</strong><small>{{ data.total ? Math.round(count / data.total * 100) : 0 }}%</small></div></div></div></section><section class="action-panel"><span class="eyebrow light">KEEP THINGS MOVING</span><h2>團隊在前進，<br>設備也準備好了。</h2><p>從領用、維修到離職交接，<br>每一個環節都在掌握之中。</p><div class="quick-links"><RouterLink to="/assignments"><ArrowLeftRight :size="18" /> 領用與歸還 <ArrowUpRight :size="17" /></RouterLink><RouterLink to="/offboarding"><ClipboardCheck :size="18" /> 離職交接 <span class="quick-count">{{ data.offboardingCount }}</span><ArrowUpRight :size="17" /></RouterLink></div></section></div><div class="dashboard-bottom"><section class="panel"><div class="panel-heading"><div><h2>待歸還設備 <span class="count-pill">{{ data.pendingReturns.length }}</span></h2><p>{{ data.overdueCount }} 項已逾預計歸還日 · 以下按預計日期排序</p></div><RouterLink to="/assignments" class="text-link">查看全部 ↗</RouterLink></div><div v-if="!data.pendingReturns.length" class="state compact">目前沒有已設定歸還日的待歸還設備。</div><div v-else class="return-list"><RouterLink v-for="a in data.pendingReturns" :key="a.id" :to="`/assets/${a.assetId}`"><span class="device-icon"><Package :size="20" /></span><div><strong>{{ a.asset.name }}</strong><small>{{ a.asset.assetTag }} · {{ a.employee.name }}</small></div><span class="return-date">{{ dateLabel(a.expectedReturnAt) }}</span></RouterLink></div></section><section class="panel"><div class="panel-heading"><div><h2>最近操作</h2><p>每一次更新，都留下清楚紀錄</p></div><RouterLink to="/audit" class="text-link">完整紀錄 ↗</RouterLink></div><ol class="activity-list"><li v-for="a in data.recentActivity" :key="a.id"><span class="timeline-dot" /><div><strong>{{ actionLabels[a.action] ?? a.action }}</strong><small>{{ a.actor.name }} · {{ dateTimeLabel(a.createdAt) }}</small></div><span class="activity-result">完成</span></li><li v-if="!data.recentActivity.length" class="muted">目前沒有操作紀錄。</li></ol></section></div></template></AsyncState></template>
+<template>
+  <div class="page-heading">
+    <div>
+      <div class="eyebrow">YOUR WORKSPACE, AT A GLANCE</div>
+      <h1>讓每一項資產，流轉有序<span class="heading-dot">.</span></h1>
+      <p>歡迎回來，{{ auth.user?.name }}。這是工作空間的最新狀況。</p>
+    </div>
+    <RouterLink v-if="auth.canWrite" class="btn" to="/assets?create=1"
+      >
+<Plus :size="17" /> 新增資產
+</RouterLink
+    >
+  </div>
+  <AsyncState :loading="loading" :error="error" @retry="reload"
+    >
+<template v-if="data"
+      >
+<div class="metric-grid">
+        <article
+          v-for="metric in metrics"
+          :key="metric.label"
+          class="metric-card"
+        >
+          <div class="metric-top">
+            <span>{{ metric.label }}</span
+            ><span class="metric-icon" :class="metric.color"
+              ><component :is="metric.icon" :size="19"
+            /></span>
+          </div>
+          <strong class="metric-value"
+            >{{ metric.value }}<small>項</small></strong
+          >
+          <p>{{ metric.caption }}</p>
+        </article>
+      </div>
+      <div class="dashboard-middle">
+        <section class="panel distribution">
+          <div class="panel-heading">
+            <div>
+              <h2>資產狀態分布</h2>
+              <p>掌握設備的每個生命週期階段</p>
+            </div>
+            <span class="subtle-tag">即時統計</span>
+          </div>
+          <div class="distribution-content">
+            <div
+              class="donut"
+              :style="{ background: distribution }"
+              role="img"
+              :aria-label="`資產總數 ${data.total}；已領用 ${data.counts.ASSIGNED}；可借出 ${data.counts.AVAILABLE}；維修 ${data.counts.MAINTENANCE}；除役 ${data.counts.RETIRED}`"
+            >
+              <div>
+                <strong>{{ data.total }}</strong
+                ><span>資產總數</span>
+              </div>
+            </div>
+            <div class="legend">
+              <div v-for="(count, status) in data.counts" :key="status">
+                <span
+                  class="legend-dot"
+                  :class="status.toLowerCase()"
+                /><span>{{ statusLabels[status] }}</span
+                ><strong>{{ count }}</strong
+                ><small
+                  >{{
+                    data.total ? Math.round((count / data.total) * 100) : 0
+                  }}%</small
+                >
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="action-panel">
+          <span class="eyebrow light">KEEP THINGS MOVING</span>
+          <h2>團隊在前進，<br>設備也準備好了。</h2>
+          <p>從領用、維修到離職交接，<br>每一個環節都在掌握之中。</p>
+          <div class="quick-links">
+            <RouterLink to="/assignments"
+              >
+<ArrowLeftRight :size="18" /> 領用與歸還
+              <ArrowUpRight :size="17" />
+</RouterLink
+            ><RouterLink to="/offboarding"
+              >
+<ClipboardCheck :size="18" /> 離職交接
+              <span class="quick-count">{{ data.offboardingCount }}</span
+              ><ArrowUpRight :size="17"
+            />
+</RouterLink>
+          </div>
+        </section>
+      </div>
+      <div class="dashboard-bottom">
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>
+                待歸還設備
+                <span class="count-pill">{{ data.pendingReturns.length }}</span>
+              </h2>
+              <p>
+                {{ data.overdueCount }} 項已逾預計歸還日 · 以下按預計日期排序
+              </p>
+            </div>
+            <RouterLink to="/assignments" class="text-link"
+              >
+查看全部 ↗
+</RouterLink
+            >
+          </div>
+          <div v-if="!data.pendingReturns.length" class="state compact">
+            目前沒有已設定歸還日的待歸還設備。
+          </div>
+          <div v-else class="return-list">
+            <RouterLink
+              v-for="a in data.pendingReturns"
+              :key="a.id"
+              :to="`/assets/${a.assetId}`"
+              >
+<span class="device-icon"><Package :size="20" /></span>
+              <div>
+                <strong>{{ a.asset.name }}</strong
+                ><small>{{ a.asset.assetTag }} · {{ a.employee.name }}</small>
+              </div>
+              <span class="return-date">{{
+                dateLabel(a.expectedReturnAt)
+              }}</span>
+</RouterLink
+            >
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>最近操作</h2>
+              <p>每一次更新，都留下清楚紀錄</p>
+            </div>
+            <RouterLink to="/audit" class="text-link">完整紀錄 ↗</RouterLink>
+          </div>
+          <ol class="activity-list">
+            <li v-for="a in data.recentActivity" :key="a.id">
+              <span class="timeline-dot" />
+              <div>
+                <strong>{{ actionLabels[a.action] ?? a.action }}</strong
+                ><small
+                  >{{ a.actor.name }} · {{ dateTimeLabel(a.createdAt) }}</small
+                >
+              </div>
+              <span class="activity-result">完成</span>
+            </li>
+            <li v-if="!data.recentActivity.length" class="muted">
+              目前沒有操作紀錄。
+            </li>
+          </ol>
+        </section>
+      </div>
+</template
+    >
+</AsyncState
+  >
+</template>
