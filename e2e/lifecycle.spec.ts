@@ -1,3 +1,4 @@
+import { businessToday } from "@assetflow/shared";
 import { test, expect, type Page } from "@playwright/test";
 const password = process.env.DEMO_PASSWORD;
 if (!password)
@@ -47,6 +48,34 @@ test("未登入與 Viewer 權限、刷新、登出", async ({ page }) => {
   await page.getByRole("button", { name: "登出", exact: true }).click();
   await expect(page).toHaveURL(/login/);
 });
+test("台灣午夜前後的日期預填不受瀏覽器時區影響", async ({ page }) => {
+  await login(page);
+  await page.clock.setFixedTime(new Date("2030-10-20T15:59:59.999Z"));
+  await nav(page, "資產管理");
+  await page.getByRole("button", { name: "新增資產", exact: true }).click();
+  await expect(page.getByRole("dialog").getByLabel("購買日期")).toHaveValue(
+    "2030-10-20",
+  );
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "關閉視窗" })
+    .click();
+  await page.clock.setFixedTime(new Date("2030-10-20T16:00:00.000Z"));
+  await page.getByRole("button", { name: "新增資產", exact: true }).click();
+  await expect(page.getByRole("dialog").getByLabel("購買日期")).toHaveValue(
+    "2030-10-21",
+  );
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "關閉視窗" })
+    .click();
+  await nav(page, "員工目錄");
+  await page.getByRole("button", { name: "建立員工", exact: true }).click();
+  await expect(page.getByRole("dialog").getByLabel("到職日期")).toHaveValue(
+    "2030-10-21",
+  );
+});
+
 test("真實完整流程：資產、員工、領用、交接阻擋、故障歸還、維修與結案", async ({
   page,
 }, info) => {
@@ -132,12 +161,19 @@ test("真實完整流程：資產、員工、領用、交接阻擋、故障歸�
     card.getByRole("button", { name: "完成交接", exact: true }),
   ).toBeEnabled();
   await card.getByRole("button", { name: "完成交接", exact: true }).click();
+  const actualLeaveDate = page.getByRole("dialog").getByLabel("實際離職日期");
+  await expect(actualLeaveDate).toHaveAttribute("required", "");
+  await expect(actualLeaveDate).toHaveValue("");
+  await actualLeaveDate.fill(businessToday());
   await page
     .getByRole("dialog")
     .getByRole("button", { name: "完成交接", exact: true })
     .click();
   await expect(page.getByRole("dialog")).not.toBeVisible();
   await expect(page.getByRole("status")).toContainText("離職交接已完成");
+  await page.getByLabel("交接狀態").selectOption("false");
+  await expect(card).toContainText("實際離職");
+  await expect(card).toContainText("交接完成於");
   await nav(page, "維修工作台");
   await page.getByLabel("搜尋維修").fill(unique);
   const maintenance = page

@@ -197,7 +197,7 @@ try {
       employeeId: employees[19]!.id,
       plannedLeaveAt: "2026-10-01",
     });
-    await completeOffboarding(actor.id, o.id);
+    await completeOffboarding(actor.id, o.id, { leftAt: "2026-10-01" });
   }
   console.log(
     "Demo seed complete: 3 users, 4 departments, 20 employees, 50 assets. Existing records and passwords preserved.",

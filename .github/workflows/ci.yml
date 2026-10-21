@@ -39,6 +39,10 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run test:api
+      - name: Date regressions on a non-business host timezone
+        run: npm test && npm run test:api
+        env:
+          TZ: America/Los_Angeles
       - run: npm run build
       - run: npm run db:seed
       - run: npx playwright install --with-deps chromium

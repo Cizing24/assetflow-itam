@@ -1,4 +1,14 @@
-import { beforeAll, beforeEach, afterAll, describe, it, expect } from "vitest";
+import { businessToday, dateOnlyToDb } from "@assetflow/shared";
+import {
+  beforeAll,
+  beforeEach,
+  afterAll,
+  afterEach,
+  describe,
+  it,
+  expect,
+  vi,
+} from "vitest";
 import argon2 from "argon2";
 import type { FastifyInstance } from "fastify";
 import { buildApp } from "../src/app.js";
@@ -108,6 +118,11 @@ beforeEach(async () => {
     login("viewer@example.test"),
   ]);
 });
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
+
 afterAll(async () => {
   if (new URL(process.env.DATABASE_URL!).pathname.endsWith("_test"))
     await db.$executeRawUnsafe(
@@ -599,17 +614,25 @@ describe("維修與離職交接", () => {
       headers: { cookie: viewer.cookie },
     });
     expect(list.json().items[0].employee.assignments).toHaveLength(3);
-    expect((await write(`/api/offboardings/${id}/complete`)).statusCode).toBe(
-      409,
-    );
+    expect(
+      (
+        await write(`/api/offboardings/${id}/complete`, {
+          leftAt: businessToday(),
+        })
+      ).statusCode,
+    ).toBe(409);
     for (const a of assignments)
       expect(
         (await write(`/api/assignments/${a}/checkin`, { condition: "GOOD" }))
           .statusCode,
       ).toBe(200);
-    expect((await write(`/api/offboardings/${id}/complete`)).statusCode).toBe(
-      200,
-    );
+    expect(
+      (
+        await write(`/api/offboardings/${id}/complete`, {
+          leftAt: businessToday(),
+        })
+      ).statusCode,
+    ).toBe(200);
     expect(
       (await db.employee.findUniqueOrThrow({ where: { id: employeeId } }))
         .status,
@@ -635,7 +658,11 @@ describe("維修與離職交接", () => {
       where: { employeeId, returnedAt: null },
     });
     expect(
-      (await write(`/api/offboardings/${o.json().id}/complete`)).statusCode,
+      (
+        await write(`/api/offboardings/${o.json().id}/complete`, {
+          leftAt: businessToday(),
+        })
+      ).statusCode,
     ).toBe(count ? 409 : 200);
     expect(
       (
@@ -655,12 +682,14 @@ describe("維修與離職交接", () => {
     const url = `/api/offboardings/${o.json().id}/complete`;
     const [returned, completed] = await Promise.all([
       write(`/api/assignments/${assignment}/checkin`, { condition: "GOOD" }),
-      write(url),
+      write(url, { leftAt: businessToday() }),
     ]);
     expect(returned.statusCode).toBe(200);
     expect([200, 409]).toContain(completed.statusCode);
     if (completed.statusCode === 409)
-      expect((await write(url)).statusCode).toBe(200);
+      expect((await write(url, { leftAt: businessToday() })).statusCode).toBe(
+        200,
+      );
     expect(
       await db.assetAssignment.count({
         where: { employeeId, returnedAt: null },
@@ -672,6 +701,260 @@ describe("維修與離職交接", () => {
     ).toBe("INACTIVE");
   });
 });
+describe("日期、時區與實際離職日回歸", () => {
+  async function freeze(instant: string) {
+    // Freeze Date only: PostgreSQL sockets, transaction retries and timeouts stay real.
+    await db.session.updateMany({
+      data: { expiresAt: new Date("2099-01-01T00:00:00Z") },
+    });
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(instant));
+  }
+
+  it.each([
+    ["2030-10-20T15:59:59.999Z", "2030-10-20", 0],
+    ["2030-10-20T16:00:00.000Z", "2030-10-21", 1],
+    ["2030-10-20T23:59:59.999Z", "2030-10-21", 1],
+    ["2030-10-21T00:00:00.000Z", "2030-10-21", 1],
+  ])(
+    "%s：預計歸還驗證與 Dashboard 共用台灣日期",
+    async (instant, today, overdue) => {
+      await freeze(instant);
+      const yesterday = today === "2030-10-20" ? "2030-10-19" : "2030-10-20";
+      expect(
+        (
+          await write("/api/assignments", {
+            assetId,
+            employeeId,
+            expectedReturnAt: yesterday,
+          })
+        ).statusCode,
+      ).toBe(400);
+      const r = await write("/api/assignments", {
+        assetId,
+        employeeId,
+        expectedReturnAt: today,
+      });
+      expect(r.statusCode).toBe(201);
+      expect(r.json().expectedReturnAt).toBe(today);
+      // Due today is never overdue. Model an older outstanding DATE directly.
+      const getDashboard = () =>
+        app.inject({
+          url: "/api/dashboard",
+          headers: { cookie: viewer.cookie },
+        });
+      expect((await getDashboard()).json().overdueCount).toBe(0);
+      await db.assetAssignment.update({
+        where: { id: r.json().id },
+        data: { expectedReturnAt: dateOnlyToDb("2030-10-20") },
+      });
+      const stats = (await getDashboard()).json();
+      expect(stats.overdueCount).toBe(overdue);
+      expect(stats.pendingReturns[0].expectedReturnAt).toBe("2030-10-20");
+      await write(`/api/assignments/${r.json().id}/checkin`, {
+        condition: "GOOD",
+      });
+      expect((await getDashboard()).json().overdueCount).toBe(0);
+    },
+  );
+
+  it("DATE 往返、巢狀 API 與 Decimal 不受 PostgreSQL session 時區影響", async () => {
+    const created = await write("/api/assets", {
+      ...inputAsset(),
+      purchasedAt: "2028-02-29",
+      warrantyUntil: "2029-02-28",
+    });
+    expect(created.statusCode).toBe(201);
+    expect(created.json()).toMatchObject({
+      purchasedAt: "2028-02-29",
+      warrantyUntil: "2029-02-28",
+      purchasePrice: "100",
+    });
+    expect(created.json().createdAt).toMatch(/T.*Z$/);
+    expect(
+      Math.abs(new Date(created.json().createdAt).getTime() - Date.now()),
+    ).toBeLessThan(60000);
+    const id = created.json().id as string;
+    const row = await db.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe("SET LOCAL TIME ZONE 'America/Los_Angeles'");
+      const asset = await tx.asset.findUniqueOrThrow({ where: { id } });
+      const raw = await tx.$queryRaw<
+        { date: string }[]
+      >`SELECT "purchasedAt"::text AS date FROM "Asset" WHERE id = ${id}`;
+      expect(raw[0]!.date).toBe("2028-02-29");
+      return asset;
+    });
+    expect(row.purchasedAt).toEqual(dateOnlyToDb("2028-02-29"));
+    const detail = await app.inject({
+      url: `/api/assets/${id}`,
+      headers: { cookie: viewer.cookie },
+    });
+    expect(detail.json().purchasedAt).toBe("2028-02-29");
+    const list = await app.inject({
+      url: "/api/assets",
+      headers: { cookie: viewer.cookie },
+    });
+    expect(
+      list.json().items.find((a: { id: string }) => a.id === id).purchasedAt,
+    ).toBe("2028-02-29");
+    const tz = await db.$queryRaw<
+      { tz: string }[]
+    >`SELECT current_setting('TimeZone') AS tz`;
+    expect(tz[0]!.tz).toBe("UTC");
+  });
+
+  it.each([
+    undefined,
+    {},
+    { leftAt: "2030-02-30" },
+    { leftAt: "2030-10-22" },
+    { leftAt: "2023-12-31" },
+    { leftAt: "2030-10-21", status: "ACTIVE" },
+  ])("缺漏、無效、未來或早於到職的實際離職日不結案：%j", async (payload) => {
+    await freeze("2030-10-20T16:00:00Z");
+    const o = await write("/api/offboardings", {
+      employeeId,
+      plannedLeaveAt: "2030-12-31",
+    });
+    const response = await write(
+      `/api/offboardings/${o.json().id}/complete`,
+      payload,
+    );
+    expect(response.statusCode).toBe(400);
+    expect(
+      await db.employee.findUniqueOrThrow({ where: { id: employeeId } }),
+    ).toMatchObject({ status: "OFFBOARDING", leftAt: null });
+    expect(
+      await db.offboarding.findUniqueOrThrow({ where: { id: o.json().id } }),
+    ).toMatchObject({ completedAt: null, completedById: null });
+    expect(
+      await db.auditLog.count({ where: { action: "OFFBOARDING_COMPLETED" } }),
+    ).toBe(0);
+  });
+
+  it.each([
+    ["2030-12-31", "2030-10-21"],
+    ["2030-10-01", "2030-10-20"],
+  ])(
+    "預計 %s 不冒充實際離職日；補登離職日期與交接完成時間各自保存",
+    async (plannedLeaveAt, leftAt) => {
+      await freeze("2030-10-20T16:30:00Z");
+      const o = await write("/api/offboardings", {
+        employeeId,
+        plannedLeaveAt,
+      });
+      const url = `/api/offboardings/${o.json().id}/complete`;
+      const result = await write(url, { leftAt });
+      expect(result.statusCode).toBe(200);
+      expect(result.json()).toMatchObject({
+        plannedLeaveAt,
+        completedAt: "2030-10-20T16:30:00.000Z",
+        completedById: itStaff.id,
+      });
+      const employee = await app.inject({
+        url: `/api/employees/${employeeId}`,
+        headers: { cookie: viewer.cookie },
+      });
+      expect(employee.json()).toMatchObject({
+        status: "INACTIVE",
+        joinedAt: "2024-01-01",
+        leftAt,
+      });
+      expect(employee.json().offboardings[0].plannedLeaveAt).toBe(
+        plannedLeaveAt,
+      );
+      expect((await write(url, { leftAt: "2030-10-21" })).statusCode).toBe(409);
+      expect(
+        (await write("/api/assignments", { assetId, employeeId })).statusCode,
+      ).toBe(409);
+      const audit = await db.auditLog.findFirstOrThrow({
+        where: { action: "OFFBOARDING_COMPLETED" },
+      });
+      expect(audit.changes).toMatchObject({
+        plannedLeaveAt,
+        leftAt,
+        completedAt: "2030-10-20T16:30:00.000Z",
+      });
+    },
+  );
+
+  it("交接中編輯到職日不得晚於預計離職日", async () => {
+    await write("/api/offboardings", {
+      employeeId,
+      plannedLeaveAt: "2026-10-01",
+    });
+    const response = await write(
+      `/api/employees/${employeeId}`,
+      {
+        employeeNumber: "E-001",
+        name: "Test employee",
+        departmentId,
+        email: "employee@example.test",
+        joinedAt: "2026-10-02",
+      },
+      itStaff,
+      "PUT",
+    );
+    expect(response.statusCode).toBe(400);
+    expect(
+      (await db.employee.findUniqueOrThrow({ where: { id: employeeId } }))
+        .joinedAt,
+    ).toEqual(dateOnlyToDb("2024-01-01"));
+  });
+
+  it("並行交接結案只有一筆成功與一筆稽核", async () => {
+    const o = await write("/api/offboardings", {
+      employeeId,
+      plannedLeaveAt: "2027-01-01",
+    });
+    const complete = () =>
+      write(`/api/offboardings/${o.json().id}/complete`, {
+        leftAt: businessToday(),
+      });
+    const results = await Promise.all([complete(), complete()]);
+    expect(results.map((r) => r.statusCode).sort()).toEqual([200, 409]);
+    expect(
+      await db.auditLog.count({ where: { action: "OFFBOARDING_COMPLETED" } }),
+    ).toBe(1);
+  });
+
+  it("交接稽核寫入失敗時實際離職日、狀態與完成時間全部 rollback", async () => {
+    const o = await write("/api/offboardings", {
+      employeeId,
+      plannedLeaveAt: "2027-01-01",
+    });
+    await db.$executeRawUnsafe(
+      `CREATE FUNCTION fail_offboarding_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.action = 'OFFBOARDING_COMPLETED' THEN RAISE EXCEPTION 'Injected test failure'; END IF; RETURN NEW; END; $$`,
+    );
+    await db.$executeRawUnsafe(
+      `CREATE TRIGGER fail_offboarding_audit BEFORE INSERT ON "AuditLog" FOR EACH ROW EXECUTE FUNCTION fail_offboarding_audit()`,
+    );
+    try {
+      expect(
+        (
+          await write(`/api/offboardings/${o.json().id}/complete`, {
+            leftAt: businessToday(),
+          })
+        ).statusCode,
+      ).toBe(500);
+      expect(
+        await db.employee.findUniqueOrThrow({ where: { id: employeeId } }),
+      ).toMatchObject({ status: "OFFBOARDING", leftAt: null });
+      expect(
+        await db.offboarding.findUniqueOrThrow({ where: { id: o.json().id } }),
+      ).toMatchObject({ completedAt: null, completedById: null });
+      expect(
+        await db.auditLog.count({ where: { action: "OFFBOARDING_COMPLETED" } }),
+      ).toBe(0);
+    } finally {
+      await db.$executeRawUnsafe(
+        `DROP TRIGGER fail_offboarding_audit ON "AuditLog"`,
+      );
+      await db.$executeRawUnsafe(`DROP FUNCTION fail_offboarding_audit()`);
+    }
+  });
+});
+
 describe("稽核、統計與契約", () => {
   it("資料庫拒絕只有日期卻缺少歸還狀況或維修結果的半完成紀錄", async () => {
     const id = await checkout();

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { businessToday, dateOnlyToDb, dateOnlyFromDb } from "@assetflow/shared";
 import { audit, db, lockAsset, lockEmployee, transaction } from "../db.js";
 import { HttpError } from "../errors.js";
 import {
@@ -8,6 +9,7 @@ import {
   maintenanceUpdateSchema,
   completeMaintenanceSchema,
   offboardingSchema,
+  completeOffboardingSchema,
 } from "../schemas.js";
 const conflict = (message: string): never => {
   throw new HttpError(409, "BUSINESS_CONFLICT", message);
@@ -22,10 +24,7 @@ export function checkout(
       conflict("只有在職且未進行離職交接的員工可以領用。");
     const asset = await lockAsset(tx, input.assetId);
     if (asset.status !== "AVAILABLE") conflict("只有可借出的設備可以領用。");
-    if (
-      input.expectedReturnAt &&
-      input.expectedReturnAt < new Date().toISOString().slice(0, 10)
-    )
+    if (input.expectedReturnAt && input.expectedReturnAt < businessToday())
       throw new HttpError(400, "INVALID_DATE", "預計歸還日期不可早於今天。");
     const changed = await tx.asset.updateMany({
       where: { id: asset.id, status: "AVAILABLE" },
@@ -38,7 +37,7 @@ export function checkout(
         employeeId: employee.id,
         checkoutById: actorId,
         expectedReturnAt: input.expectedReturnAt
-          ? new Date(input.expectedReturnAt)
+          ? dateOnlyToDb(input.expectedReturnAt)
           : null,
         checkoutNotes: input.notes,
       },
@@ -195,7 +194,7 @@ export function startOffboarding(
   return transaction(async (tx) => {
     const employee = await lockEmployee(tx, input.employeeId);
     if (employee.status !== "ACTIVE") conflict("此員工已離職或正在交接中。");
-    if (input.plannedLeaveAt < employee.joinedAt.toISOString().slice(0, 10))
+    if (input.plannedLeaveAt < dateOnlyFromDb(employee.joinedAt))
       throw new HttpError(400, "INVALID_DATE", "離職日期不可早於到職日期。");
     await tx.employee.update({
       where: { id: employee.id },
@@ -205,7 +204,7 @@ export function startOffboarding(
       data: {
         employeeId: employee.id,
         operatorId: actorId,
-        plannedLeaveAt: new Date(input.plannedLeaveAt),
+        plannedLeaveAt: dateOnlyToDb(input.plannedLeaveAt),
         notes: input.notes,
       },
     });
@@ -216,13 +215,29 @@ export function startOffboarding(
     return offboarding;
   });
 }
-export async function completeOffboarding(actorId: string, id: string) {
+export async function completeOffboarding(
+  actorId: string,
+  id: string,
+  input: z.infer<typeof completeOffboardingSchema>,
+) {
   const ref = await db.offboarding.findUnique({ where: { id } });
   if (!ref) throw new HttpError(404, "NOT_FOUND", "找不到交接紀錄。");
   return transaction(async (tx) => {
-    await lockEmployee(tx, ref.employeeId);
+    const employee = await lockEmployee(tx, ref.employeeId);
     const record = await tx.offboarding.findUniqueOrThrow({ where: { id } });
     if (record.completedAt) conflict("交接已完成。");
+    if (employee.status !== "OFFBOARDING" || employee.leftAt)
+      conflict("員工狀態與交接紀錄不一致。");
+    const completedAt = new Date();
+    if (
+      input.leftAt < dateOnlyFromDb(employee.joinedAt) ||
+      input.leftAt > businessToday(completedAt)
+    )
+      throw new HttpError(
+        400,
+        "INVALID_DATE",
+        "實際離職日期須介於到職日期與今天之間。",
+      );
     const outstanding = await tx.assetAssignment.count({
       where: { employeeId: ref.employeeId, returnedAt: null },
     });
@@ -230,11 +245,11 @@ export async function completeOffboarding(actorId: string, id: string) {
       conflict(`仍有 ${outstanding} 項設備未歸還，無法完成交接。`);
     await tx.employee.update({
       where: { id: ref.employeeId },
-      data: { status: "INACTIVE", leftAt: record.plannedLeaveAt },
+      data: { status: "INACTIVE", leftAt: dateOnlyToDb(input.leftAt) },
     });
     const updated = await tx.offboarding.update({
       where: { id },
-      data: { completedAt: new Date(), completedById: actorId },
+      data: { completedAt, completedById: actorId },
     });
     await audit(
       tx,
@@ -242,7 +257,13 @@ export async function completeOffboarding(actorId: string, id: string) {
       "OFFBOARDING_COMPLETED",
       "Employee",
       ref.employeeId,
-      { offboardingId: id, outstanding: 0 },
+      {
+        offboardingId: id,
+        outstanding: 0,
+        plannedLeaveAt: dateOnlyFromDb(record.plannedLeaveAt),
+        leftAt: input.leftAt,
+        completedAt: completedAt.toISOString(),
+      },
     );
     return updated;
   });

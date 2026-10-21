@@ -4,7 +4,12 @@ import { setTimeout } from "node:timers/promises";
 import { config } from "./config.js";
 import { HttpError } from "./errors.js";
 export const db = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: config.DATABASE_URL }),
+  // Existing TIMESTAMP(3) columns store UTC wall-clock values. Pin DB defaults
+  // (now()) as well as Prisma reads/writes to UTC, regardless of server timezone.
+  adapter: new PrismaPg({
+    connectionString: config.DATABASE_URL,
+    options: "-c timezone=UTC",
+  }),
 });
 export type Transaction = Prisma.TransactionClient;
 function retryable(error: unknown): boolean {

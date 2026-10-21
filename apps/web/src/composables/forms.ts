@@ -1,3 +1,4 @@
+import { businessToday } from "@assetflow/shared";
 import type { Field } from "../components/FormDialog.vue";
 import type { Lookups, Asset, Employee } from "../types";
 import { dateInput } from "../types";
@@ -45,7 +46,7 @@ export function assetInitial(asset?: Asset): Record<string, string> {
         purchasePrice: asset.purchasePrice ?? "",
         warrantyUntil: dateInput(asset.warrantyUntil),
       }
-    : { purchasedAt: new Date().toISOString().slice(0, 10) };
+    : { purchasedAt: businessToday() };
 }
 export function assetPayload(v: Record<string, string>) {
   return {
@@ -81,7 +82,7 @@ export function employeeInitial(employee?: Employee): Record<string, string> {
         email: employee.email,
         joinedAt: dateInput(employee.joinedAt),
       }
-    : { joinedAt: new Date().toISOString().slice(0, 10) };
+    : { joinedAt: businessToday() };
 }
 export const checkinFields: Field[] = [
   {

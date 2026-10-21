@@ -1,5 +1,6 @@
 import argon2 from "argon2";
 import { z } from "zod";
+import { dateOnlyToDb, dateOnlyFromDb } from "@assetflow/shared";
 import { audit, lockAsset, lockEmployee, transaction } from "../db.js";
 import { HttpError } from "../errors.js";
 import {
@@ -28,8 +29,10 @@ export function saveAsset(
       throw new HttpError(400, "INVALID_DATE", "保固到期日不可早於購買日期。");
     const data = {
       ...input,
-      purchasedAt: new Date(input.purchasedAt),
-      warrantyUntil: input.warrantyUntil ? new Date(input.warrantyUntil) : null,
+      purchasedAt: dateOnlyToDb(input.purchasedAt),
+      warrantyUntil: input.warrantyUntil
+        ? dateOnlyToDb(input.warrantyUntil)
+        : null,
     };
     const asset = id
       ? await tx.asset.update({ where: { id }, data })
@@ -55,12 +58,23 @@ export function saveEmployee(
 ) {
   return transaction(async (tx) => {
     const before = id ? await lockEmployee(tx, id) : null;
-    if (
-      before?.leftAt &&
-      input.joinedAt > before.leftAt.toISOString().slice(0, 10)
-    )
+    if (before?.leftAt && input.joinedAt > dateOnlyFromDb(before.leftAt))
       throw new HttpError(400, "INVALID_DATE", "到職日期不可晚於離職日期。");
-    const data = { ...input, joinedAt: new Date(input.joinedAt) };
+    if (before) {
+      const offboarding = await tx.offboarding.findFirst({
+        where: { employeeId: before.id, completedAt: null },
+      });
+      if (
+        offboarding &&
+        input.joinedAt > dateOnlyFromDb(offboarding.plannedLeaveAt)
+      )
+        throw new HttpError(
+          400,
+          "INVALID_DATE",
+          "到職日期不可晚於預計離職日期。",
+        );
+    }
+    const data = { ...input, joinedAt: dateOnlyToDb(input.joinedAt) };
     const employee = id
       ? await tx.employee.update({ where: { id }, data })
       : await tx.employee.create({ data });

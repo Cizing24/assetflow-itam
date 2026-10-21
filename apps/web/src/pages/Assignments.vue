@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { businessToday } from "@assetflow/shared";
 import { ref } from "vue";
 import { Plus, Search } from "@lucide/vue";
 import { useCollection } from "../composables/data";
@@ -31,7 +32,7 @@ function checkout() {
         key: "expectedReturnAt",
         label: "預計歸還日期",
         type: "date",
-        min: new Date().toISOString().slice(0, 10),
+        min: businessToday(),
       },
       { key: "notes", label: "備註", type: "textarea" },
     ],

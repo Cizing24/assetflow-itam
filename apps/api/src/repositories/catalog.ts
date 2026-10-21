@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { businessToday, dateOnlyToDb } from "@assetflow/shared";
 import { db } from "../db.js";
 import { assetStatus, type ListInput } from "../schemas.js";
 import { z } from "zod";
@@ -190,6 +191,7 @@ export async function auditLogs(q: ListInput) {
   return page(q, items, total);
 }
 export function dashboard() {
+  const today = dateOnlyToDb(businessToday());
   return db.$transaction(
     async (tx) => {
       const groups = await tx.asset.groupBy({ by: ["status"], _count: true });
@@ -207,7 +209,7 @@ export function dashboard() {
           where: {
             returnedAt: null,
             expectedReturnAt: {
-              lt: new Date(new Date().toISOString().slice(0, 10)),
+              lt: today,
             },
           },
         }),

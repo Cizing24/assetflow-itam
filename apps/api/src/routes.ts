@@ -406,11 +406,18 @@ export function routes(app: FastifyInstance) {
   );
   app.post(
     "/api/offboardings/:id/complete",
-    { schema: read("交易內重新驗證無未歸還設備後完成交接", "Offboarding") },
+    {
+      schema: body(
+        s.completeOffboardingSchema,
+        "確認實際離職日期並重新驗證無未歸還設備後完成交接",
+        ["Offboarding"],
+      ),
+    },
     (req) =>
       lifecycle.completeOffboarding(
         permission(req, writers).id,
         pathId(req.params),
+        s.completeOffboardingSchema.parse(req.body),
       ),
   );
   app.get(

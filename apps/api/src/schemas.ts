@@ -1,15 +1,12 @@
 import { z } from "zod";
-import { roles, statuses } from "@assetflow/shared";
+import { roles, statuses, isDateOnly } from "@assetflow/shared";
 export const idSchema = z.object({ id: z.uuid() });
 export const text = z.string().trim().min(1).max(200);
 export const notes = z.string().trim().max(2000).optional();
 export const date = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
-  .refine((v) => {
-    const d = new Date(v);
-    return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
-  }, "日期無效");
+  .refine(isDateOnly, "日期無效");
 export const listSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
@@ -97,6 +94,9 @@ export const offboardingSchema = z.strictObject({
   employeeId: z.uuid(),
   plannedLeaveAt: date,
   notes,
+});
+export const completeOffboardingSchema = z.strictObject({
+  leftAt: date,
 });
 export const userSchema = z.strictObject({
   email: z

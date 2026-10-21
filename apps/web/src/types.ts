@@ -1,4 +1,9 @@
 import type { AssetStatus, Role } from "@assetflow/shared";
+import {
+  BUSINESS_TIME_ZONE,
+  dateOnlyToDb,
+  isDateOnly,
+} from "@assetflow/shared";
 export interface Lookup {
   id: string;
   name: string;
@@ -106,16 +111,19 @@ export interface DashboardData {
 }
 export const dateLabel = (v?: string | null) =>
   v
-    ? new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium" }).format(
-        new Date(v),
-      )
+    ? new Intl.DateTimeFormat("zh-TW", {
+        dateStyle: "medium",
+        timeZone: isDateOnly(v) ? "UTC" : BUSINESS_TIME_ZONE,
+      }).format(isDateOnly(v) ? dateOnlyToDb(v) : new Date(v))
     : "—";
 export const dateTimeLabel = (v: string) =>
   new Intl.DateTimeFormat("zh-TW", {
     dateStyle: "short",
     timeStyle: "short",
+    timeZone: BUSINESS_TIME_ZONE,
   }).format(new Date(v));
-export const dateInput = (v?: string | null) => v?.slice(0, 10) ?? "";
+// Only DATE fields belong in date inputs. Timestamps must be formatted separately.
+export const dateInput = (v?: string | null) => (v && isDateOnly(v) ? v : "");
 export const employmentLabels = {
   ACTIVE: "在職",
   OFFBOARDING: "交接中",

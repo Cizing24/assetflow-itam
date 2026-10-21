@@ -38,7 +38,7 @@ flowchart LR
 | `apps/web/src/composables/`                | 可取消讀取、分頁／篩選、表單定義與 payload 轉換                 |
 | `apps/web/src/components/`                 | Shell、原生 Dialog、遠端搜尋選項、Loading／Empty／Error、分頁   |
 | `apps/web/src/pages/`                      | 11 個產品頁面與 404                                             |
-| `packages/shared/src/index.ts`             | 角色、狀態標籤與少量跨層契約                                    |
+| `packages/shared/src/index.ts`             | 角色、狀態標籤、Asia/Taipei 日期工具與少量跨層契約              |
 | `apps/api/test/`、`apps/web/test/`、`e2e/` | 真實 DB、元件與瀏覽器測試                                       |
 
 Repository 根目錄直接就是 npm workspace，不另外加一層同名資料夾。共用套件只承載穩定的小型契約，不把 Prisma client 或資料庫欄位整包送入瀏覽器。
@@ -65,3 +65,5 @@ Pinia 僅保存登入使用者與已還原狀態。CSRF token 保存在 API clie
 - CI：Linux 乾淨安裝與真實 PostgreSQL，另建 Docker image 並執行 Compose smoke。
 
 沒有 Redis、微服務、訊息佇列或分散式鎖。單一 PostgreSQL 的交易與鎖已能正確處理預期數十至數百設備的規模。
+
+HTTP `preSerialization` 僅將六個 DATE 欄位的 Prisma Date carrier（包括巢狀物件）轉為純日期；Timestamp 保留 ISO UTC、Decimal 保留字串、既有 Audit JSON 保留原樣。前端與後端同用 `packages/shared/src/dates.ts`，業務日期不依賴主機時區。

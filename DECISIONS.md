@@ -63,3 +63,19 @@
 **決策**：ESLint 負責 TypeScript／Vue 品質規則，Prettier 固定格式；使用官方 `eslint-config-prettier` 關閉重複格式檢查。
 
 **取捨**：`no-undef` 在 Vue TypeScript 檔停用，交由 vue-tsc strict 完整檢查型別／名稱。未關閉業務、安全或測試斷言；Lint 必須零警告。
+
+## ADR-009：業務曆日與事件時間分開
+
+**決策**：共用套件集中 Asia/Taipei 的「今天」，DATE 使用純日期 API 契約與 UTC 午夜 carrier；Timestamp 保留 UTC 儲存與傳輸，連線 session 固定 UTC，前端明確用業務時區顯示。
+
+**理由**：UTC 今天在台灣 00:00–07:59 是前一天；使用瀏覽器預設時區也會讓同一筆事件顯示不同曆日。DATE 本身沒有時區，不能將它視為本地午夜或一般 Timestamp。
+
+**影響**：同步更新所有 Vue 日期輸入與 API DATE response。既有 TIMESTAMP(3) 與 Migration 不改，避免重新解讀歷史瞬間；直接寫入資料庫須遵守 UTC session 契約。
+
+## ADR-010：離職結案明確確認實際離職日
+
+**決策**：完成既有交接時必填 leftAt，驗證到職日 ≤ 實際離職日 ≤ 業務今天；plannedLeaveAt 保留規劃值，completedAt 保存當下時間。全部設備歸還、實際離職確認與員工 INACTIVE 仍在同一交易提交。
+
+**理由**：既有三個欄位已能表達不同概念，無需增加重複欄位、Migration 或獨立 HR 模組。可補登已發生的離職，但不能把未來計畫當成已離職。提前收齊設備則留在 OFFBOARDING 等實際離職確認。
+
+**影響**：交接結案 API 新增必要 body，沿用原 Dialog 增加必要日期欄位，保留領還與維修流程。舊版可能誤填的 leftAt 需外部人事事實才能更正，此次保留歷史，不自動回填。

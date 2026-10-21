@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { businessToday } from "@assetflow/shared";
 import { Plus, Search, ClipboardCheck, CheckCircle2 } from "@lucide/vue";
 import { useCollection } from "../composables/data";
 import { useAuth } from "../stores/auth";
 import { api } from "../api/client";
 import { checkinFields, checkinPayload } from "../composables/forms";
-import { type Offboarding, type Assignment, dateLabel } from "../types";
+import {
+  type Offboarding,
+  type Assignment,
+  dateLabel,
+  dateTimeLabel,
+} from "../types";
 import AsyncState from "../components/AsyncState.vue";
 import StatusBadge from "../components/StatusBadge.vue";
 import Pagination from "../components/Pagination.vue";
@@ -62,10 +68,20 @@ function checkin(a: Assignment) {
 function complete(o: Offboarding) {
   void dialog.value?.open({
     title: "確認完成離職交接",
-    description: `${o.employee.name} 的設備已全部歸還。伺服器將再次檢查後完成交接並將員工標記為已離職。`,
+    description: `${o.employee.name} 的設備已全部歸還。請確認員工已實際離職並填寫日期；伺服器重新檢查後完成交接並標記為已離職。`,
+    fields: [
+      {
+        key: "leftAt",
+        label: "實際離職日期",
+        type: "date",
+        required: true,
+        min: o.employee.joinedAt,
+        max: businessToday(),
+      },
+    ],
     submitLabel: "完成交接",
-    onSubmit: async () => {
-      await api(`/offboardings/${o.id}/complete`, { method: "POST" });
+    onSubmit: async (v) => {
+      await api(`/offboardings/${o.id}/complete`, { method: "POST", body: v });
       success.value = "離職交接已完成，歷史紀錄已保留。";
       await reload();
     },
@@ -128,9 +144,12 @@ function complete(o: Offboarding) {
               <strong>{{ o.employee.assignments?.length ?? 0 }}</strong>
               項設備待歸還</span
             ><span v-else
-              >交接完成於 {{ dateLabel(o.completedAt) }} ·
+              >實際離職 {{ dateLabel(o.employee.leftAt) }} · 交接完成於
+              {{ dateTimeLabel(o.completedAt) }} ·
               {{ o.completedBy?.name }}</span
-            ><span v-if="!o.completedAt" class="muted">歸還後即可完成交接</span>
+            ><span v-if="!o.completedAt" class="muted"
+              >設備全數歸還且確認實際離職後即可結案</span
+            >
           </div>
           <div
             v-for="a in o.employee.assignments"

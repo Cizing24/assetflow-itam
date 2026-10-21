@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { businessToday } from "@assetflow/shared";
 import { computed, ref } from "vue";
 import { useRoute } from "vue-router";
 import {
@@ -83,7 +84,7 @@ function checkout() {
         key: "expectedReturnAt",
         label: "預計歸還日期",
         type: "date",
-        min: new Date().toISOString().slice(0, 10),
+        min: businessToday(),
       },
       { key: "notes", label: "領用備註", type: "textarea" },
     ],

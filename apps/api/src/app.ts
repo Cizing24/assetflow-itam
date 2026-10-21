@@ -7,6 +7,7 @@ import { authentication, cookieName } from "./auth.js";
 import { errorHandler } from "./errors.js";
 import { routes } from "./routes.js";
 import { db } from "./db.js";
+import { serializeDates } from "./dates.js";
 export async function buildApp(logger = false) {
   const app = Fastify({
     logger: logger
@@ -25,6 +26,9 @@ export async function buildApp(logger = false) {
     ajv: { customOptions: { removeAdditional: false, coerceTypes: false } },
   });
   errorHandler(app);
+  app.addHook("preSerialization", async (_req, _reply, payload) =>
+    serializeDates(payload),
+  );
   await app.register(cookie);
   await app.register(helmet, {
     contentSecurityPolicy: {

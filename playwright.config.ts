@@ -15,8 +15,14 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
-    { name: "mobile", use: { ...devices["Pixel 7"] } },
+    {
+      name: "desktop",
+      use: { ...devices["Desktop Chrome"], timezoneId: "America/Los_Angeles" },
+    },
+    {
+      name: "mobile",
+      use: { ...devices["Pixel 7"], timezoneId: "Asia/Tokyo" },
+    },
   ],
   webServer: {
     command: process.env.E2E_SERVER_COMMAND ?? "npm run dev",

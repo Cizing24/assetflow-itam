@@ -4,6 +4,12 @@
 
 OpenAPI 定義寫入欄位、列表 query、成功狀態、錯誤 envelope 與 Session/CSRF security。成功 response 目前保留一般 JSON object schema，完整資源欄位以本文、Prisma schema 與 web types 為準，未宣稱全量 response schema codegen。
 
+## 日期契約（第一輪修正）
+
+業務時區固定 Asia/Taipei。`purchasedAt`、`warrantyUntil`、`joinedAt`、`leftAt`、`expectedReturnAt`、`plannedLeaveAt` 的 request／response 均為 `YYYY-MM-DD`（可為 null 的欄位保留 null），包括巢狀 employee／asset／assignment／offboarding。其餘時間欄位為 UTC ISO timestamp，例如 `2030-10-20T16:30:00.000Z`；前端顯示為台灣當地時間。
+
+相容性變更：舊版 DATE response 曾輸出午夜 `...T00:00:00.000Z`，現在回傳純日期；交接結案由無 body 改為必填 `{leftAt}`。Repository Vue 已同步，外部 API client 須同步調整。歷史 Audit JSON snapshot 原樣保留，可能包含舊版序列化的日期。
+
 ## 驗證
 
 ```http
@@ -58,7 +64,7 @@ R = 已登入任一角色；W = ADMIN／IT_STAFF；A = ADMIN。
 | POST `/maintenance/:id/complete`  | W                           | 200  | 結案 outcome、notes                             |
 | GET `/offboardings`               | R                           | 200  | 即時未歸還清單、employee、operator、completedBy |
 | POST `/offboardings`              | W                           | 201  | 啟動離職交接                                    |
-| POST `/offboardings/:id/complete` | W                           | 200  | 無 request body；交易內重驗證                   |
+| POST `/offboardings/:id/complete` | W                           | 200  | 必填 `{leftAt}`；交易內重驗證                   |
 | GET `/audit-logs`                 | R                           | 200  | 唯讀稽核、actor                                 |
 | GET `/dashboard`                  | R                           | 200  | 統計與最近活動                                  |
 | GET `/users`                      | A                           | 200  | 分頁帳號，不回傳 passwordHash                   |
@@ -120,6 +126,8 @@ R = 已登入任一角色；W = ADMIN／IT_STAFF；A = ADMIN。
 
 交接：`{"employeeId":"<uuid>","plannedLeaveAt":"2027-01-31","notes":"員工離職交接"}`。
 
+交接結案：`POST /api/offboardings/:id/complete`，body `{"leftAt":"2026-10-21"}`。leftAt 必須是已發生的實際離職日，介於 joinedAt 與 Asia/Taipei 今天；不要求等於 plannedLeaveAt。全部設備已歸還且員工仍為 OFFBOARDING 才能成功。缺漏／無效／未來日期 400；未歸還、重複結案或來源狀態不一致 409。成功保存獨立的 completedAt、completedById，員工轉 INACTIVE；GET 員工／交接可讀取三種日期。
+
 ## 分頁、搜尋與篩選
 
 列表回傳：
@@ -154,7 +162,7 @@ R = 已登入任一角色；W = ADMIN／IT_STAFF；A = ADMIN。
 }
 ```
 
-以上數字僅為格式示例，非固定前端值。`utilization = round(ASSIGNED / (total - RETIRED) * 100)`，沒有有效設備時為0。pendingReturns 最多8筆、只包含有預計歸還日的未歸還設備，按日期排序；overdueCount 計算預計日早於伺服器 UTC 當日的有效領用。recentActivity 最多8筆。統計以同一 RepeatableRead 快照查詢。
+以上數字僅為格式示例，非固定前端值。`utilization = round(ASSIGNED / (total - RETIRED) * 100)`，沒有有效設備時為0。pendingReturns 最多8筆、只包含有預計歸還日的未歸還設備，按日期排序；overdueCount 計算預計日早於Asia/Taipei 當日的有效領用。recentActivity 最多8筆。統計以同一 RepeatableRead 快照查詢。
 
 ## 錯誤
 

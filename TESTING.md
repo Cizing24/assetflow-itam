@@ -13,7 +13,37 @@
 
 API 測試使用 TEST_DATABASE_URL，設定與 cleanup 都要求 DB 名稱以 `_test` 結尾。每個案例重建專用測試表格資料，整套結束後清空測試 fixture。沒有清空開發展示庫。E2E 會保留明確標記的合成資產、員工與生命週期歷史，以便檢查。
 
-## 已執行結果
+## 第一輪工程審查修正（2026-10-21）
+
+本輪保留全部原有測試，既有交接測試僅補上必要的明確實際離職日。新增檔案 `apps/web/test/dates.test.ts`，並擴充原 API／E2E 測試。
+
+| 項目                                         | 本輪結果                                                                                |
+| -------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Lint／Type-check／format:check／diff --check | 通過，零 Lint 警告                                                                      |
+| Unit／Vue components                         | 26 項通過（原13項全部保留）；本機預設與 America/Los_Angeles 皆通過                      |
+| API Integration／真實 PostgreSQL             | 43 項通過（原27項全部保留）；本機預設與 America/Los_Angeles 皆通過                      |
+| Build                                        | shared／API／Vue 全部成功                                                               |
+| Migration                                    | dev／test 均確認既有3份已套用，沒有 pending；本輪未改 schema／Migration                 |
+| npm audit --audit-level=moderate             | 0 vulnerabilities                                                                       |
+| 瀏覽器矩陣                                   | dev 與 compiled 各6項；Desktop Chrome 使用 America/Los_Angeles、Pixel 7 使用 Asia/Tokyo |
+| GitHub Actions                               | 本輪 commit 的 quality／docker 結果以交付連結與對應 SHA 為準；下方舊版結果不是本輪證據  |
+
+新增覆蓋：台灣午夜前1毫秒與整點、UTC 換日前後、跨年、閏日、無效 date-only、日期預填、事件時間的台灣顯示、DATE 在 PostgreSQL 非 UTC session 往返、巢狀 API 日期與 Decimal、UTC timestamp 預設值不偏移、今日到期不逾期、已還設備排除、缺漏／未來／早於到職的實際離職日、預計與實際不同、延後補登、編輯到職日防矛盾、並行結案唯一成功、交接稽核失敗整筆 rollback。
+
+執行期間保留並分析過兩種瀏覽器失敗：午夜前1毫秒使用走動時鐘會在開表單前跨日，改用 `page.clock.setFixedTime()` 固定 Date；另一輪 trace 顯示 `/api/*` 回502，原因是本機同步執行 shared build 觸發 tsx dev server 重載。完整 E2E 改依 CI 順序在編譯完成後獨立執行，沒有移除測試、放寬日期斷言或加入 force click。
+
+額外主機時區重現（需先完成 shared build）：
+
+```powershell
+$env:TZ = 'America/Los_Angeles'
+npm.cmd test
+npm.cmd run test:api
+Remove-Item Env:TZ
+```
+
+E2E 請在 Build／Type-check 完成後執行，避免 watch server 在瀏覽途中因 shared/dist 重建而重啟。既有 pg query queue deprecation warning 保留，未關閉警告。
+
+## 第一版基準結果（保留歷史）
 
 | 項目                               | 結果／範圍                                                                                                                                                              |
 | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

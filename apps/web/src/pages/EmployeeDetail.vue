@@ -58,7 +58,7 @@ function offboard() {
         label: "預計離職日期",
         type: "date",
         required: true,
-        min: data.value?.joinedAt.slice(0, 10),
+        min: data.value?.joinedAt,
       },
       { key: "notes", label: "交接備註", type: "textarea" },
     ],
@@ -134,7 +134,7 @@ function checkin(a: Assignment) {
             <dd>{{ dateLabel(data.joinedAt) }}</dd>
           </div>
           <div>
-            <dt>離職日期</dt>
+            <dt>實際離職日期</dt>
             <dd>{{ dateLabel(data.leftAt) }}</dd>
           </div>
           <div>
