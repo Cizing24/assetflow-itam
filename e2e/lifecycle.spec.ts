@@ -6,6 +6,12 @@ if (!password)
   );
 async function login(page: Page, role = "admin") {
   await page.goto("/login");
+  await expect(
+    page.getByRole("heading", { name: "登入工作空間", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("登入狀態已到期，請重新登入。", { exact: true }),
+  ).toHaveCount(0);
   await page
     .getByLabel("電子郵件", { exact: true })
     .fill(`${role}@assetflow.local`);

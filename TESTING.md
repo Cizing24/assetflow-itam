@@ -22,7 +22,7 @@ API 測試使用 TEST_DATABASE_URL，設定與 cleanup 都要求 DB 名稱以 `_
 | Seed idempotency                   | 連續執行 2 次成功；20 名示範員工、50 項資產，不重複新增；之後 E2E 合成紀錄另計                                                                                          |
 | `npm run lint`                     | 零錯誤／零警告                                                                                                                                                          |
 | `npm run typecheck`                | TypeScript strict、vue-tsc 成功                                                                                                                                         |
-| `npm test`                         | 12 項通過                                                                                                                                                               |
+| `npm test`                         | 13 項通過                                                                                                                                                               |
 | `npm run test:api`                 | 27 項通過（包含 nullable 結案約束與限流回歸測試）                                                                                                                       |
 | `npm run test:e2e`                 | 4 項通過：2 個主要流程 × desktop/mobile                                                                                                                                 |
 | `npm run build`                    | shared、API、Vue production bundle 成功；主要 JS gzip 約42 KiB，頁面採 lazy chunks                                                                                      |
@@ -87,6 +87,7 @@ API 測試使用 TEST_DATABASE_URL，設定與 cleanup 都要求 DB 名稱以 `_
 - Prettier 與 Vue 格式規則衝突：使用 eslint-config-prettier，保留程式品質規則與 strict 型別檢查。
 - 正式 bundle 的 SPA 刷新：Vite 預設 `/assets/` 與資產詳情業務路由衝突。改用 `/_static/` 儲存編譯資源，未知 API／靜態檔仍維持 JSON 404；另加 compiled server 的桌面／手機全流程 E2E。
 - 正式 bundle 高密度瀏覽器操作：靜態 chunk 原先消耗全域 API 限流配額，造成 lazy import 回429。限流明確限縮到 `/api/`，保留每分鐘300次及登入10次；靜態資源與健康檢查不消耗配額。
+- 初次未登入也會收到 Session 查詢401，不能一律顯示「登入已到期」。只有 client 先前持有 Session token 時才發出到期事件；新增元件回歸測試與 E2E 登入頁斷言。
 
 ## 重現指令
 

@@ -46,8 +46,9 @@ export async function api<T>(
       .json()
       .catch(() => null)) as ApiErrorBody | null;
     if (response.status === 401 && path !== "/auth/login") {
+      const hadSession = csrfToken !== null;
       setCsrfToken(null);
-      window.dispatchEvent(new Event("session-expired"));
+      if (hadSession) window.dispatchEvent(new Event("session-expired"));
     }
     throw new ApiError(
       response.status,

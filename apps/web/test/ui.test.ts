@@ -104,6 +104,29 @@ describe("元件狀態與操作", () => {
   });
 });
 describe("API Client", () => {
+  it("初次未登入不觸發到期提示；已登入的401才觸發Session到期事件", async () => {
+    const dispatch = vi.spyOn(window, "dispatchEvent").mockReturnValue(true);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              error: { code: "UNAUTHENTICATED", message: "請先登入" },
+            }),
+            { status: 401 },
+          ),
+        ),
+      ),
+    );
+    await expect(api("/auth/session")).rejects.toMatchObject({ status: 401 });
+    expect(dispatch).not.toHaveBeenCalled();
+    setCsrfToken("known-session");
+    await expect(api("/assets")).rejects.toMatchObject({ status: 401 });
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "session-expired" }),
+    );
+  });
   it("傳送 Cookie credentials 與 CSRF，從伺服器讀回資料", async () => {
     const fetchMock = vi
       .fn()

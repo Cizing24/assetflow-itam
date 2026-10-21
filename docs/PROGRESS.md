@@ -12,7 +12,7 @@
 | 2 Authentication & Core Data | Session／Origin／CSRF／RBAC、資產與員工 API/UI；型別、Build、API 與瀏覽器驗證                                                                                                         | `738b214` API；`e57a920` web                             |
 | 3 Business Workflows         | 領還、維修、除役、交接、Audit、鎖與唯一約束；真實並行與故障注入 rollback 測試                                                                                                         | `738b214` 業務 service；`e3849da` 測試與修正             |
 | 4 Dashboard & UX             | DB 快照 Dashboard、完整11頁、RWD與狀態回饋；修正手機 sr-only／Dialog 競合問題；桌面／手機4項E2E通過                                                                                   | `e57a920` UI；`e3849da` 完整瀏覽器驗證                   |
-| 5 Quality & Delivery         | 12元件測試、27 DB整合測試、dev／compiled各4項 E2E、Build、Lint、型別、npm audit；Private GitHub已推送，第一輪 quality／docker jobs success；八份技術文件、OpenAPI與五張展示截圖已完成 | `e3849da` 首輪CI；最後交付以 Repository 最新 commit 為準 |
+| 5 Quality & Delivery         | 13元件測試、27 DB整合測試、dev／compiled各4項 E2E、Build、Lint、型別、npm audit；Private GitHub已推送，第一輪 quality／docker jobs success；八份技術文件、OpenAPI與五張展示截圖已完成 | `e3849da` 首輪CI；最後交付以 Repository 最新 commit 為準 |
 
 部分模組在驗收前交錯實作，Git 依 foundation／API／UI／quality 保留實際里程碑，沒有杜撰每個 commit 都含完整產品。首輪可驗證 CI：[39587665457](https://github.com/Cizing24/assetflow-itam/actions/runs/39587665457)。
 
