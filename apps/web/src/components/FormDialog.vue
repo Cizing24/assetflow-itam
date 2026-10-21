@@ -133,8 +133,7 @@ defineExpose({ open });
               :value="option.value"
             >
               {{ option.label }}
-            </option>
-</select
+            </option></select
           ><textarea
             v-else-if="field.type === 'textarea'"
             :id="`field-${field.key}`"
@@ -154,7 +153,7 @@ defineExpose({ open });
             :maxlength="field.type === 'password' ? 128 : 200"
             :step="field.type === 'number' ? '0.01' : undefined"
             :autocomplete="field.type === 'password' ? 'new-password' : 'off'"
-          ><small v-if="field.hint">{{ field.hint }}</small>
+          /><small v-if="field.hint">{{ field.hint }}</small>
         </div>
       </div>
       <p v-if="error" class="inline-error" role="alert">{{ error }}</p>
@@ -165,8 +164,7 @@ defineExpose({ open });
           :disabled="busy"
           @click="close"
         >
-          取消
-</button
+          取消</button
         ><button
           class="btn"
           :class="{ danger: config.danger }"

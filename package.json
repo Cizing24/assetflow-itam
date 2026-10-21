@@ -11,6 +11,10 @@
     "node": ">=22.12.0 <27"
   },
   "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "docs:api": "tsx scripts/export-openapi.ts",
+    "docs:screenshots": "tsx scripts/capture-demo.ts",
     "dev": "concurrently -k -n api,web \"npm run dev -w @assetflow/api\" \"npm run dev -w @assetflow/web\"",
     "build": "npm run build -w @assetflow/shared && npm run build -w @assetflow/api && npm run build -w @assetflow/web",
     "typecheck": "npm run build -w @assetflow/shared && tsc -p apps/api/tsconfig.json --noEmit && vue-tsc -p apps/web/tsconfig.json --noEmit",
@@ -52,6 +56,7 @@
     "@vue/test-utils": "2.5.1",
     "concurrently": "9.2.5",
     "eslint": "9.39.5",
+    "eslint-config-prettier": "10.1.8",
     "eslint-plugin-vue": "10.11.1",
     "jsdom": "26.1.0",
     "prettier": "3.9.10",

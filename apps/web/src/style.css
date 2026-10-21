@@ -1242,7 +1242,9 @@ label {
   color: #354d30;
   box-shadow: 0 20px 80px #18352535;
 }
-body:has(dialog[open]) { overflow: hidden; }
+body:has(dialog[open]) {
+  overflow: hidden;
+}
 .form-dialog::backdrop {
   background: #132f255c;
   backdrop-filter: blur(3px);

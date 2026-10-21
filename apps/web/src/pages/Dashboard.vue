@@ -82,17 +82,13 @@ const metrics = computed(() =>
       <h1>讓每一項資產，流轉有序<span class="heading-dot">.</span></h1>
       <p>歡迎回來，{{ auth.user?.name }}。這是工作空間的最新狀況。</p>
     </div>
-    <RouterLink v-if="auth.canWrite" class="btn" to="/assets?create=1"
-      >
-<Plus :size="17" /> 新增資產
-</RouterLink
-    >
+    <RouterLink v-if="auth.canWrite" class="btn" to="/assets?create=1">
+      <Plus :size="17" /> 新增資產
+    </RouterLink>
   </div>
-  <AsyncState :loading="loading" :error="error" @retry="reload"
-    >
-<template v-if="data"
-      >
-<div class="metric-grid">
+  <AsyncState :loading="loading" :error="error" @retry="reload">
+    <template v-if="data">
+      <div class="metric-grid">
         <article
           v-for="metric in metrics"
           :key="metric.label"
@@ -149,21 +145,17 @@ const metrics = computed(() =>
         </section>
         <section class="action-panel">
           <span class="eyebrow light">KEEP THINGS MOVING</span>
-          <h2>團隊在前進，<br>設備也準備好了。</h2>
-          <p>從領用、維修到離職交接，<br>每一個環節都在掌握之中。</p>
+          <h2>團隊在前進，<br />設備也準備好了。</h2>
+          <p>從領用、維修到離職交接，<br />每一個環節都在掌握之中。</p>
           <div class="quick-links">
-            <RouterLink to="/assignments"
-              >
-<ArrowLeftRight :size="18" /> 領用與歸還
-              <ArrowUpRight :size="17" />
-</RouterLink
-            ><RouterLink to="/offboarding"
-              >
-<ClipboardCheck :size="18" /> 離職交接
+            <RouterLink to="/assignments">
+              <ArrowLeftRight :size="18" /> 領用與歸還
+              <ArrowUpRight :size="17" /> </RouterLink
+            ><RouterLink to="/offboarding">
+              <ClipboardCheck :size="18" /> 離職交接
               <span class="quick-count">{{ data.offboardingCount }}</span
-              ><ArrowUpRight :size="17"
-            />
-</RouterLink>
+              ><ArrowUpRight :size="17" />
+            </RouterLink>
           </div>
         </section>
       </div>
@@ -179,11 +171,9 @@ const metrics = computed(() =>
                 {{ data.overdueCount }} 項已逾預計歸還日 · 以下按預計日期排序
               </p>
             </div>
-            <RouterLink to="/assignments" class="text-link"
-              >
-查看全部 ↗
-</RouterLink
-            >
+            <RouterLink to="/assignments" class="text-link">
+              查看全部 ↗
+            </RouterLink>
           </div>
           <div v-if="!data.pendingReturns.length" class="state compact">
             目前沒有已設定歸還日的待歸還設備。
@@ -193,8 +183,8 @@ const metrics = computed(() =>
               v-for="a in data.pendingReturns"
               :key="a.id"
               :to="`/assets/${a.assetId}`"
-              >
-<span class="device-icon"><Package :size="20" /></span>
+            >
+              <span class="device-icon"><Package :size="20" /></span>
               <div>
                 <strong>{{ a.asset.name }}</strong
                 ><small>{{ a.asset.assetTag }} · {{ a.employee.name }}</small>
@@ -202,8 +192,7 @@ const metrics = computed(() =>
               <span class="return-date">{{
                 dateLabel(a.expectedReturnAt)
               }}</span>
-</RouterLink
-            >
+            </RouterLink>
           </div>
         </section>
         <section class="panel">
@@ -231,8 +220,6 @@ const metrics = computed(() =>
           </ol>
         </section>
       </div>
-</template
-    >
-</AsyncState
-  >
+    </template>
+  </AsyncState>
 </template>

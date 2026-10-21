@@ -57,7 +57,7 @@ onUnmounted(() => {
       type="search"
       :aria-label="`搜尋${kind === 'asset' ? '可借出設備' : '在職員工'}選項`"
       placeholder="輸入名稱或編號搜尋選項…"
-    ><small v-if="loading" role="status">載入選項中…</small>
+    /><small v-if="loading" role="status">載入選項中…</small>
     <p v-if="error" class="inline-error" role="alert">
       {{ error }}
       <button type="button" class="text-button" @click="load">重試</button>
@@ -73,8 +73,7 @@ onUnmounted(() => {
       <option value="">請選擇{{ kind === "asset" ? "設備" : "員工" }}</option>
       <option v-for="item in items" :key="item.id" :value="item.id">
         {{ item.assetTag ?? item.employeeNumber }} · {{ item.name }}
-      </option>
-</select
+      </option></select
     ><small>顯示最多 100 筆，輸入關鍵字可搜尋全部資料。</small>
   </div>
 </template>

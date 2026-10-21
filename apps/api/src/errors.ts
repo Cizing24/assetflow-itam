@@ -48,7 +48,14 @@ export function errorHandler(app: FastifyInstance) {
         status === 429 ? "嘗試次數過多，請稍後再試。" : "請求格式不正確。";
     }
     if (status >= 500)
-      req.log.error({ err: error, requestId: req.id }, "Request failed");
+      req.log.error(
+        {
+          errorName: error.name,
+          errorCode: "code" in error ? String(error.code) : undefined,
+          requestId: req.id,
+        },
+        "Request failed",
+      );
     return reply
       .code(status)
       .send({ error: { code, message, requestId: req.id } });
@@ -57,18 +64,17 @@ export function errorHandler(app: FastifyInstance) {
     if (
       app.hasReplyDecorator("sendFile") &&
       req.method === "GET" &&
+      req.url.split("?")[0] !== "/api" &&
       !req.url.startsWith("/api/") &&
-      !req.url.startsWith("/assets/")
+      !req.url.startsWith("/_static/")
     )
       return reply.sendFile("index.html");
-    return reply
-      .code(404)
-      .send({
-        error: {
-          code: "NOT_FOUND",
-          message: "找不到此端點。",
-          requestId: req.id,
-        },
-      });
+    return reply.code(404).send({
+      error: {
+        code: "NOT_FOUND",
+        message: "找不到此端點。",
+        requestId: req.id,
+      },
+    });
   });
 }

@@ -15,8 +15,7 @@ defineEmits<{ "update:page": [value: number] }>();
         aria-label="上一頁"
         @click="$emit('update:page', page - 1)"
       >
-        ← 上一頁
-</button
+        ← 上一頁</button
       ><button
         class="btn secondary small"
         :disabled="page * (pageSize ?? 20) >= total"

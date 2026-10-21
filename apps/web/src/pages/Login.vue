@@ -41,9 +41,9 @@ async function login() {
       >
       <div>
         <span class="eyebrow light">IT ASSET LIFECYCLE MANAGEMENT</span>
-        <h1>每一項設備，<br>都有清楚的下一步。</h1>
+        <h1>每一項設備，<br />都有清楚的下一步。</h1>
         <p>
-          從第一天領用，到最後一次交接。<br>讓企業資產的每個流轉，都值得信任。
+          從第一天領用，到最後一次交接。<br />讓企業資產的每個流轉，都值得信任。
         </p>
         <div class="lifecycle-visual">
           <span>入庫</span><i /><span>領用</span><i /><span>歸還</span
@@ -72,7 +72,7 @@ async function login() {
             autocomplete="username"
             required
             placeholder="you@company.com"
-          >
+          />
         </div>
         <div class="field">
           <label for="password">密碼</label
@@ -84,14 +84,14 @@ async function login() {
             required
             maxlength="128"
             placeholder="輸入你的密碼"
-          >
+          />
         </div>
         <p v-if="error" class="inline-error" role="alert">{{ error }}</p>
         <button class="btn full" :disabled="busy">
           {{ busy ? "正在驗證…" : "登入 AssetFlow" }}<ArrowUpRight :size="18" />
         </button>
         <p class="login-help">
-          請使用管理員提供的帳號。<br>隔離展示環境的帳號與設定方式請參閱
+          請使用管理員提供的帳號。<br />隔離展示環境的帳號與設定方式請參閱
           README。
         </p>
       </form>

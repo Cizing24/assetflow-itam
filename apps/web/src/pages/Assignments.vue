@@ -84,7 +84,7 @@ function checkin(a: Assignment) {
           type="search"
           aria-label="搜尋領用紀錄"
           placeholder="搜尋設備、編號或領用員工…"
-        >
+        />
       </div>
       <select v-model="filters.active" aria-label="領用狀態">
         <option value="true">尚未歸還</option>
@@ -97,8 +97,8 @@ function checkin(a: Assignment) {
       :error="error"
       :empty="!data?.items.length"
       @retry="reload"
-      >
-<div class="table-scroll">
+    >
+      <div class="table-scroll">
         <table>
           <thead>
             <tr>
@@ -113,21 +113,17 @@ function checkin(a: Assignment) {
           <tbody>
             <tr v-for="a in data?.items" :key="a.id">
               <td>
-                <RouterLink :to="`/assets/${a.assetId}`"
-                  >
-<strong>{{ a.asset.name }}</strong
+                <RouterLink :to="`/assets/${a.assetId}`">
+                  <strong>{{ a.asset.name }}</strong
                   ><small class="block mono muted">{{
                     a.asset.assetTag
                   }}</small>
-</RouterLink
-                >
+                </RouterLink>
               </td>
               <td>
                 <RouterLink :to="`/employees/${a.employeeId}`">
-{{
-                  a.employee.name
-                }}
-</RouterLink>
+                  {{ a.employee.name }}
+                </RouterLink>
               </td>
               <td>
                 {{ dateLabel(a.checkedOutAt)
@@ -147,15 +143,13 @@ function checkin(a: Assignment) {
                   class="btn secondary small"
                   @click="checkin(a)"
                 >
-                  歸還設備
-</button
+                  歸還設備</button
                 ><span v-else class="muted">—</span>
               </td>
             </tr>
           </tbody>
         </table>
-      </div>
-</AsyncState
+      </div> </AsyncState
     ><Pagination v-if="data" v-model:page="page" :total="data.total" />
   </section>
   <FormDialog ref="dialog" />

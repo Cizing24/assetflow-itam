@@ -35,6 +35,7 @@ jobs:
       - run: npm run db:generate
       - run: npm run db:migrate
       - run: npm run lint
+      - run: npm run format:check
       - run: npm run typecheck
       - run: npm test
       - run: npm run test:api
@@ -42,6 +43,13 @@ jobs:
       - run: npm run db:seed
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      - name: Compiled app browser workflows
+        run: npm run test:e2e
+        env:
+          E2E_BASE_URL: http://localhost:3002
+          E2E_SERVER_COMMAND: npm start
+          APP_ORIGIN: http://localhost:3002
+          PORT: "3002"
       - run: npm audit --audit-level=moderate
       - name: Browser evidence
         if: always()

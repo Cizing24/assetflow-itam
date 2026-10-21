@@ -71,14 +71,13 @@ watch([() => route.query.create, lookups.data], ([requested, lookup]) => {
           type="search"
           aria-label="搜尋資產"
           placeholder="搜尋名稱、編號、品牌或序號…"
-        >
+        />
       </div>
       <select v-model="filters.status" aria-label="資產狀態">
         <option value="">所有狀態</option>
         <option v-for="s in statuses" :key="s" :value="s">
           {{ statusLabels[s] }}
-        </option>
-</select
+        </option></select
       ><select v-model="filters.categoryId" aria-label="資產分類">
         <option value="">所有分類</option>
         <option
@@ -87,13 +86,11 @@ watch([() => route.query.create, lookups.data], ([requested, lookup]) => {
           :value="c.id"
         >
           {{ c.name }}
-        </option>
-</select
+        </option></select
       ><select v-model="filters.sort" aria-label="資產排序">
         <option value="createdAt">建立時間</option>
         <option value="name">資產名稱</option>
-        <option value="assetTag">資產編號</option>
-</select
+        <option value="assetTag">資產編號</option></select
       ><select v-model="filters.order" aria-label="排序方向">
         <option value="desc">由大到小</option>
         <option value="asc">由小到大</option>
@@ -104,8 +101,8 @@ watch([() => route.query.create, lookups.data], ([requested, lookup]) => {
       :error="error"
       :empty="!data?.items.length"
       @retry="reload"
-      >
-<div class="table-scroll">
+    >
+      <div class="table-scroll">
         <table>
           <thead>
             <tr>
@@ -120,15 +117,13 @@ watch([() => route.query.create, lookups.data], ([requested, lookup]) => {
           <tbody>
             <tr v-for="asset in data?.items" :key="asset.id">
               <td>
-                <RouterLink :to="`/assets/${asset.id}`" class="entity-cell"
-                  >
-<span class="device-icon"><Package :size="20" /></span>
+                <RouterLink :to="`/assets/${asset.id}`" class="entity-cell">
+                  <span class="device-icon"><Package :size="20" /></span>
                   <div>
                     <strong>{{ asset.name }}</strong
                     ><small class="mono">{{ asset.assetTag }}</small>
                   </div>
-</RouterLink
-                >
+                </RouterLink>
               </td>
               <td class="muted">{{ asset.category.name }}</td>
               <td><StatusBadge :status="asset.status" /></td>
@@ -137,12 +132,11 @@ watch([() => route.query.create, lookups.data], ([requested, lookup]) => {
                   v-if="asset.assignments[0]"
                   :to="`/employees/${asset.assignments[0].employeeId}`"
                   class="person-cell"
-                  >
-<span class="avatar tiny">{{
+                >
+                  <span class="avatar tiny">{{
                     asset.assignments[0].employee.name.slice(0, 1)
                   }}</span
-                  >{{ asset.assignments[0].employee.name }}
-</RouterLink
+                  >{{ asset.assignments[0].employee.name }} </RouterLink
                 ><span v-else class="muted">未指派</span>
               </td>
               <td class="muted">{{ asset.location }}</td>
@@ -151,16 +145,14 @@ watch([() => route.query.create, lookups.data], ([requested, lookup]) => {
                   :to="`/assets/${asset.id}`"
                   class="icon-button"
                   :aria-label="`查看 ${asset.assetTag}`"
-                  >
-<ArrowUpRight :size="18"
-                />
-</RouterLink>
+                >
+                  <ArrowUpRight :size="18" />
+                </RouterLink>
               </td>
             </tr>
           </tbody>
         </table>
-</div>
-</AsyncState
+      </div> </AsyncState
     ><Pagination v-if="data" v-model:page="page" :total="data.total" />
   </section>
   <FormDialog ref="dialog" />

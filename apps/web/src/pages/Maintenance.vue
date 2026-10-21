@@ -99,7 +99,7 @@ function complete(m: Maintenance) {
           type="search"
           aria-label="搜尋維修"
           placeholder="搜尋設備名稱…"
-        >
+        />
       </div>
       <select v-model="filters.active" aria-label="維修狀態">
         <option value="true">處理中</option>
@@ -112,19 +112,17 @@ function complete(m: Maintenance) {
       :error="error"
       :empty="!data?.items.length"
       @retry="reload"
-      >
-<div class="maintenance-grid">
+    >
+      <div class="maintenance-grid">
         <article v-for="m in data?.items" :key="m.id" class="maintenance-card">
           <div class="card-top">
             <span class="device-icon"><Wrench :size="20" /></span
             ><StatusBadge :status="m.completedAt ? 'COMPLETED' : 'OPEN'" />
           </div>
-          <RouterLink :to="`/assets/${m.asset.id}`"
-            >
-<span class="eyebrow mono">{{ m.asset.assetTag }}</span>
+          <RouterLink :to="`/assets/${m.asset.id}`">
+            <span class="eyebrow mono">{{ m.asset.assetTag }}</span>
             <h3>{{ m.asset.name }}</h3>
-</RouterLink
-          >
+          </RouterLink>
           <p>{{ m.description }}</p>
           <dl>
             <div>
@@ -144,13 +142,11 @@ function complete(m: Maintenance) {
           <StatusBadge v-if="m.outcome" :status="m.outcome" />
           <div v-if="!m.completedAt && auth.canWrite" class="button-row">
             <button class="btn secondary small" @click="update(m)">
-              更新進度
-</button
+              更新進度</button
             ><button class="btn small" @click="complete(m)">完成維修</button>
           </div>
         </article>
-      </div>
-</AsyncState
+      </div> </AsyncState
     ><Pagination v-if="data" v-model:page="page" :total="data.total" />
   </section>
   <FormDialog ref="dialog" />

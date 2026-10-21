@@ -61,7 +61,7 @@ function create() {
           type="search"
           aria-label="搜尋員工"
           placeholder="搜尋姓名、員工編號或電子郵件…"
-        >
+        />
       </div>
       <select v-model="filters.departmentId" aria-label="員工部門">
         <option value="">所有部門</option>
@@ -71,8 +71,7 @@ function create() {
           :value="d.id"
         >
           {{ d.name }}
-        </option>
-</select
+        </option></select
       ><select v-model="filters.status" aria-label="在職狀態">
         <option value="">所有狀態</option>
         <option
@@ -81,13 +80,11 @@ function create() {
           :value="value"
         >
           {{ label }}
-        </option>
-</select
+        </option></select
       ><select v-model="filters.sort" aria-label="員工排序">
         <option value="createdAt">建立時間</option>
         <option value="name">姓名</option>
-        <option value="employeeNumber">員工編號</option>
-</select
+        <option value="employeeNumber">員工編號</option></select
       ><select v-model="filters.order" aria-label="排序方向">
         <option value="desc">由大到小</option>
         <option value="asc">由小到大</option>
@@ -98,8 +95,8 @@ function create() {
       :error="error"
       :empty="!data?.items.length"
       @retry="reload"
-      >
-<div class="table-scroll">
+    >
+      <div class="table-scroll">
         <table>
           <thead>
             <tr>
@@ -114,15 +111,13 @@ function create() {
           <tbody>
             <tr v-for="e in data?.items" :key="e.id">
               <td>
-                <RouterLink :to="`/employees/${e.id}`" class="entity-cell"
-                  >
-<span class="avatar">{{ e.name.slice(0, 1) }}</span>
+                <RouterLink :to="`/employees/${e.id}`" class="entity-cell">
+                  <span class="avatar">{{ e.name.slice(0, 1) }}</span>
                   <div>
                     <strong>{{ e.name }}</strong
                     ><small class="mono">{{ e.employeeNumber }}</small>
                   </div>
-</RouterLink
-                >
+                </RouterLink>
               </td>
               <td>
                 {{ e.department.name
@@ -140,16 +135,14 @@ function create() {
                   :to="`/employees/${e.id}`"
                   class="icon-button"
                   :aria-label="`查看 ${e.name}`"
-                  >
-<ArrowUpRight :size="18"
-                />
-</RouterLink>
+                >
+                  <ArrowUpRight :size="18" />
+                </RouterLink>
               </td>
             </tr>
           </tbody>
         </table>
-</div>
-</AsyncState
+      </div> </AsyncState
     ><Pagination v-if="data" v-model:page="page" :total="data.total" />
   </section>
   <FormDialog ref="dialog" />

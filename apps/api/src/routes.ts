@@ -17,9 +17,36 @@ import * as catalog from "./services/catalog.js";
 import * as queries from "./repositories/catalog.js";
 const writers = ["ADMIN", "IT_STAFF"] as const;
 const errorResponse = {
-  type: 'object', required: ['error'], properties: { error: { type: 'object', required: ['code', 'message', 'requestId'], properties: { code: { type: 'string' }, message: { type: 'string' }, requestId: { type: 'string' } } } },
+  type: "object",
+  required: ["error"],
+  properties: {
+    error: {
+      type: "object",
+      required: ["code", "message", "requestId"],
+      properties: {
+        code: { type: "string" },
+        message: { type: "string" },
+        requestId: { type: "string" },
+      },
+    },
+  },
 };
-function responses(status = 200) { return { [status]: { type: 'object', additionalProperties: true, description: '成功；完整欄位與範例請參閱 API.md' }, 400: errorResponse, 401: errorResponse, 403: errorResponse, 404: errorResponse, 409: errorResponse, 429: errorResponse, 500: errorResponse }; }
+function responses(status = 200) {
+  return {
+    [status]: {
+      type: "object",
+      additionalProperties: true,
+      description: "成功；完整欄位與範例請參閱 API.md",
+    },
+    400: errorResponse,
+    401: errorResponse,
+    403: errorResponse,
+    404: errorResponse,
+    409: errorResponse,
+    429: errorResponse,
+    500: errorResponse,
+  };
+}
 function body(schema: z.ZodType, summary: string, tags: string[]) {
   return {
     summary,
@@ -29,24 +56,42 @@ function body(schema: z.ZodType, summary: string, tags: string[]) {
     response: responses(),
   };
 }
-function created(schema: z.ZodType, summary: string, tags: string[]) { return { ...body(schema, summary, tags), response: responses(201) }; }
+function created(schema: z.ZodType, summary: string, tags: string[]) {
+  return { ...body(schema, summary, tags), response: responses(201) };
+}
 const read = (summary: string, tag: string) => ({
   summary,
   tags: [tag],
   security: [{ sessionCookie: [] }],
   response: responses(),
 });
-const querySchema = z.toJSONSchema(s.listSchema, { io: 'input', target: 'draft-7' });
+const querySchema = z.toJSONSchema(s.listSchema, {
+  io: "input",
+  target: "draft-7",
+});
 // HTTP query values are strings; Zod applies numeric coercion and limits after AJV.
-const list = (summary: string, tag: string) => ({ ...read(summary, tag), querystring: { ...querySchema, properties: { ...querySchema.properties, page: { type: 'string', pattern: '^[0-9]+$', default: '1' }, pageSize: { type: 'string', pattern: '^[0-9]+$', default: '20' } } } });
+const list = (summary: string, tag: string) => ({
+  ...read(summary, tag),
+  querystring: {
+    ...querySchema,
+    properties: {
+      ...querySchema.properties,
+      page: { type: "string", pattern: "^[0-9]+$", default: "1" },
+      pageSize: { type: "string", pattern: "^[0-9]+$", default: "20" },
+    },
+  },
+});
 const pathId = (params: unknown) => s.idSchema.parse(params).id;
 export function routes(app: FastifyInstance) {
   app.post(
     "/api/auth/login",
     {
-      schema: { ...body(s.loginSchema, "登入並建立伺服器端 Session", [
-        "Authentication",
-      ]), security: [] },
+      schema: {
+        ...body(s.loginSchema, "登入並建立伺服器端 Session", [
+          "Authentication",
+        ]),
+        security: [],
+      },
       config: {
         rateLimit: {
           max: config.NODE_ENV === "test" ? 500 : 10,
@@ -296,7 +341,9 @@ export function routes(app: FastifyInstance) {
   );
   app.post(
     "/api/maintenance",
-    { schema: created(s.maintenanceSchema, "將可借出設備送修", ["Maintenance"]) },
+    {
+      schema: created(s.maintenanceSchema, "將可借出設備送修", ["Maintenance"]),
+    },
     async (req, reply) =>
       reply
         .code(201)

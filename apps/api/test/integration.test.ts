@@ -109,10 +109,42 @@ beforeEach(async () => {
   ]);
 });
 afterAll(async () => {
+  if (new URL(process.env.DATABASE_URL!).pathname.endsWith("_test"))
+    await db.$executeRawUnsafe(
+      'TRUNCATE TABLE "AuditLog", "Session", "AssetAssignment", "MaintenanceRecord", "Offboarding", "Asset", "Employee", "Department", "AssetCategory", "User" CASCADE',
+    );
   await app?.close();
   await db.$disconnect();
 });
 describe("Session、CSRF 與後端權限", () => {
+  it("靜態請求不消耗配額，API 仍維持每分鐘300次限制與統一429格式", async () => {
+    const limited = await buildApp();
+    try {
+      await limited.ready();
+      for (let i = 0; i < 305; i++)
+        expect((await limited.inject("/_static/missing.js")).statusCode).toBe(
+          404,
+        );
+      for (let i = 0; i < 300; i++)
+        expect(
+          (
+            await limited.inject({
+              url: "/api/auth/session",
+              headers: { cookie: viewer.cookie },
+            })
+          ).statusCode,
+        ).toBe(200);
+      const response = await limited.inject({
+        url: "/api/auth/session",
+        headers: { cookie: viewer.cookie },
+      });
+      expect(response.statusCode).toBe(429);
+      expect(response.json().error.code).toBe("RATE_LIMITED");
+      expect((await limited.inject("/health")).statusCode).toBe(200);
+    } finally {
+      await limited.close();
+    }
+  });
   it("所有業務資源拒絕未登入讀取", async () => {
     for (const path of [
       "assets",
@@ -641,6 +673,20 @@ describe("維修與離職交接", () => {
   });
 });
 describe("稽核、統計與契約", () => {
+  it("資料庫拒絕只有日期卻缺少歸還狀況或維修結果的半完成紀錄", async () => {
+    const id = await checkout();
+    await expect(
+      db.$executeRaw`UPDATE "AssetAssignment" SET "returnedAt" = now(), "checkinById" = ${itStaff.id} WHERE id = ${id}`,
+    ).rejects.toThrow();
+    const other = await makeAsset();
+    const record = await write("/api/maintenance", {
+      assetId: other.id,
+      description: "Test complete fields",
+    });
+    await expect(
+      db.$executeRaw`UPDATE "MaintenanceRecord" SET "completedAt" = now() WHERE id = ${record.json().id}`,
+    ).rejects.toThrow();
+  });
   it("Audit Log 在資料庫層拒絕 UPDATE / DELETE", async () => {
     await checkout();
     await expect(

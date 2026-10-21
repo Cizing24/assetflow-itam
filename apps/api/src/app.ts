@@ -3,7 +3,7 @@ import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import swagger from "@fastify/swagger";
-import { authentication } from "./auth.js";
+import { authentication, cookieName } from "./auth.js";
 import { errorHandler } from "./errors.js";
 import { routes } from "./routes.js";
 import { db } from "./db.js";
@@ -39,7 +39,12 @@ export async function buildApp(logger = false) {
       },
     },
   });
-  await app.register(rateLimit, { max: 300, timeWindow: "1 minute" });
+  await app.register(rateLimit, {
+    max: 300,
+    timeWindow: "1 minute",
+    // Static bundles must not consume the API quota, especially after a refresh.
+    allowList: (req) => !req.url.startsWith("/api/"),
+  });
   await app.register(swagger, {
     openapi: {
       info: {
@@ -53,7 +58,7 @@ export async function buildApp(logger = false) {
           sessionCookie: {
             type: "apiKey",
             in: "cookie",
-            name: "assetflow_session",
+            name: cookieName,
           },
           csrfToken: { type: "apiKey", in: "header", name: "X-CSRF-Token" },
         },

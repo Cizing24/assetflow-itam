@@ -160,15 +160,11 @@ function retire() {
 }
 </script>
 <template>
-  <RouterLink to="/assets" class="back-link"
-    >
-<ArrowLeft :size="16" />返回資產管理
-</RouterLink
-  ><AsyncState :loading="loading" :error="error" @retry="reload"
-    >
-<template v-if="data"
-      >
-<div class="page-heading">
+  <RouterLink to="/assets" class="back-link">
+    <ArrowLeft :size="16" />返回資產管理 </RouterLink
+  ><AsyncState :loading="loading" :error="error" @retry="reload">
+    <template v-if="data">
+      <div class="page-heading">
         <div>
           <span class="eyebrow mono">{{ data.assetTag }}</span>
           <h1>{{ data.name }}</h1>
@@ -180,15 +176,13 @@ function retire() {
             class="btn secondary"
             @click="edit"
           >
-            <Pencil :size="16" />編輯資料
-</button
+            <Pencil :size="16" />編輯資料</button
           ><button
             v-if="auth.canWrite && data.status === 'AVAILABLE'"
             class="btn"
             @click="checkout"
           >
-            <ArrowLeftRight :size="16" />領用設備
-</button
+            <ArrowLeftRight :size="16" />領用設備</button
           ><button v-if="auth.canWrite && current" class="btn" @click="checkin">
             歸還設備
           </button>
@@ -236,9 +230,8 @@ function retire() {
                   v-if="current"
                   :to="`/employees/${current.employeeId}`"
                   class="text-link"
-                  >
-{{ current.employee.name }} ↗
-</RouterLink
+                >
+                  {{ current.employee.name }} ↗ </RouterLink
                 ><span v-else>未指派</span>
               </dd>
             </div>
@@ -252,8 +245,7 @@ function retire() {
             class="panel-actions"
           >
             <button class="btn secondary" @click="maintain">
-              <Wrench :size="16" />建立維修
-</button
+              <Wrench :size="16" />建立維修</button
             ><button class="btn subtle-danger" @click="retire">
               <Archive :size="16" />設備除役
             </button>
@@ -266,8 +258,8 @@ function retire() {
             :error="history.error.value"
             :empty="!history.data.value?.items.length"
             @retry="history.reload"
-            >
-<ol class="activity-list">
+          >
+            <ol class="activity-list">
               <li v-for="a in history.data.value?.items" :key="a.id">
                 <span class="timeline-dot" />
                 <div>
@@ -279,8 +271,7 @@ function retire() {
                 </div>
               </li>
             </ol>
-</AsyncState
-          >
+          </AsyncState>
         </section>
       </div>
       <section class="panel section-gap">
@@ -346,8 +337,6 @@ function retire() {
           尚無維修紀錄。
         </p>
       </section>
-</template
-    >
-</AsyncState
+    </template> </AsyncState
   ><FormDialog ref="dialog" />
 </template>

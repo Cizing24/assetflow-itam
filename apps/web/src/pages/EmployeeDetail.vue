@@ -92,15 +92,11 @@ function checkin(a: Assignment) {
 }
 </script>
 <template>
-  <RouterLink to="/employees" class="back-link"
-    >
-<ArrowLeft :size="16" />返回員工目錄
-</RouterLink
-  ><AsyncState :loading="loading" :error="error" @retry="reload"
-    >
-<template v-if="data"
-      >
-<div class="page-heading">
+  <RouterLink to="/employees" class="back-link">
+    <ArrowLeft :size="16" />返回員工目錄 </RouterLink
+  ><AsyncState :loading="loading" :error="error" @retry="reload">
+    <template v-if="data">
+      <div class="page-heading">
         <div>
           <span class="eyebrow mono">{{ data.employeeNumber }}</span>
           <h1>{{ data.name }}</h1>
@@ -112,8 +108,7 @@ function checkin(a: Assignment) {
             class="btn secondary"
             @click="edit"
           >
-            <Pencil :size="16" />編輯員工
-</button
+            <Pencil :size="16" />編輯員工</button
           ><button
             v-if="auth.canWrite && data.status === 'ACTIVE'"
             class="btn"
@@ -154,14 +149,12 @@ function checkin(a: Assignment) {
           <span class="count-pill">{{ current.length }} 項</span>
         </div>
         <div v-for="a in current" :key="a.id" class="record-row">
-          <RouterLink :to="`/assets/${a.assetId}`"
-            >
-<strong>{{ a.asset.name }}</strong
+          <RouterLink :to="`/assets/${a.assetId}`">
+            <strong>{{ a.asset.name }}</strong
             ><small
               >{{ a.asset.assetTag }} · 領用日期
               {{ dateLabel(a.checkedOutAt) }}</small
-            >
-</RouterLink
+            > </RouterLink
           ><button
             v-if="auth.canWrite"
             class="btn secondary small"
@@ -188,14 +181,12 @@ function checkin(a: Assignment) {
             <tbody>
               <tr v-for="a in data.assignments" :key="a.id">
                 <td>
-                  <RouterLink :to="`/assets/${a.assetId}`"
-                    >
-{{ a.asset.name
+                  <RouterLink :to="`/assets/${a.assetId}`">
+                    {{ a.asset.name
                     }}<small class="block mono muted">{{
                       a.asset.assetTag
                     }}</small>
-</RouterLink
-                  >
+                  </RouterLink>
                 </td>
                 <td>
                   {{ dateLabel(a.checkedOutAt)
@@ -217,8 +208,6 @@ function checkin(a: Assignment) {
           </table>
         </div>
       </section>
-</template
-    >
-</AsyncState
+    </template> </AsyncState
   ><FormDialog ref="dialog" />
 </template>

@@ -24,7 +24,7 @@ const { data, loading, error, page, filters, reload } =
           type="search"
           aria-label="搜尋操作紀錄"
           placeholder="搜尋操作代碼（如 CHECKOUT）或操作人員…"
-        >
+        />
       </div>
     </div>
     <AsyncState
@@ -32,8 +32,8 @@ const { data, loading, error, page, filters, reload } =
       :error="error"
       :empty="!data?.items.length"
       @retry="reload"
-      >
-<div class="table-scroll">
+    >
+      <div class="table-scroll">
         <table>
           <thead>
             <tr>
@@ -58,9 +58,8 @@ const { data, loading, error, page, filters, reload } =
                   v-if="a.targetType === 'Asset' || a.targetType === 'Employee'"
                   :to="`/${a.targetType === 'Asset' ? 'assets' : 'employees'}/${a.targetId}`"
                   class="text-link"
-                  >
-{{ a.targetType }} ↗
-</RouterLink
+                >
+                  {{ a.targetType }} ↗ </RouterLink
                 ><span v-else>{{ a.targetType }}</span
                 ><small class="block mono muted">{{
                   a.targetId.slice(0, 8)
@@ -80,8 +79,7 @@ const { data, loading, error, page, filters, reload } =
             </tr>
           </tbody>
         </table>
-      </div>
-</AsyncState
+      </div> </AsyncState
     ><Pagination v-if="data" v-model:page="page" :total="data.total" />
   </section>
 </template>

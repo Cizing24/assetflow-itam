@@ -35,7 +35,7 @@ test("未登入與 Viewer 權限、刷新、登出", async ({ page }) => {
   await page.reload();
   await expect(page.locator("tbody tr").first()).toBeVisible();
   await page.goto("/users");
-  await expect(page).toHaveURL("http://localhost:5173/");
+  await expect(page).toHaveURL(`${new URL(page.url()).origin}/`);
   const menu = page.getByRole("button", { name: "開啟導覽" });
   if (await menu.isVisible()) await menu.click();
   await page.getByRole("button", { name: "登出", exact: true }).click();
@@ -49,12 +49,16 @@ test("真實完整流程：資產、員工、領用、交接阻擋、故障歸�
     employeeName = `測試員工 ${unique}`;
   await login(page);
   await nav(page, "員工目錄");
-  await expect(page.locator('tbody tr').first()).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
+  await expect(page.locator("tbody tr").first()).toBeVisible();
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(page.viewportSize()!.width);
   await page.getByRole("button", { name: "建立員工", exact: true }).click();
   let dialog = page.getByRole("dialog");
   await dialog.getByLabel("員工編號").fill(`E-${unique}`);
-  await dialog.getByRole("textbox", { name: "姓名", exact: true }).fill(employeeName);
+  await dialog
+    .getByRole("textbox", { name: "姓名", exact: true })
+    .fill(employeeName);
   await dialog.getByLabel("部門").selectOption({ index: 1 });
   await dialog.getByLabel("職稱").fill("測試工程師");
   await dialog.getByLabel("電子郵件").fill(`${unique}@example.test`);
@@ -65,7 +69,9 @@ test("真實完整流程：資產、員工、領用、交接阻擋、故障歸�
   dialog = page.getByRole("dialog");
   await dialog.getByLabel("資產編號").fill(tag);
   await dialog.getByLabel("資產名稱").fill(`展示筆電 ${unique}`);
-  await dialog.getByRole("combobox", { name: "分類", exact: true }).selectOption({ index: 1 });
+  await dialog
+    .getByRole("combobox", { name: "分類", exact: true })
+    .selectOption({ index: 1 });
   await dialog.getByLabel("存放位置").fill("測試辦公室");
   await dialog.getByRole("textbox", { name: "品牌", exact: true }).fill("Test");
   await dialog.getByLabel("型號").fill("Lifecycle Pro");
@@ -149,5 +155,7 @@ test("真實完整流程：資產、員工、領用、交接阻擋、故障歸�
   await nav(page, "操作紀錄");
   await page.getByLabel("搜尋操作紀錄").fill("MAINTENANCE_COMPLETED");
   await expect(page.locator("tbody tr").first()).toContainText("維修結案");
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(page.viewportSize()!.width);
 });

@@ -50,13 +50,11 @@ async function logout() {
       @click="mobileOpen = false"
     />
     <aside class="sidebar" :class="{ open: mobileOpen }">
-      <RouterLink to="/" class="brand" @click="mobileOpen = false"
-        >
-<span class="brand-symbol"><Layers :size="22" /></span>AssetFlow<span
+      <RouterLink to="/" class="brand" @click="mobileOpen = false">
+        <span class="brand-symbol"><Layers :size="22" /></span>AssetFlow<span
           class="brand-dot"
           >.</span
-        >
-</RouterLink
+        > </RouterLink
       ><button
         class="mobile-close icon-button"
         aria-label="關閉導覽"
@@ -81,24 +79,22 @@ async function logout() {
               : route.path.startsWith(link.path),
           }"
           @click="mobileOpen = false"
-          >
-<component :is="link.icon" :size="19" /><span>{{
+        >
+          <component :is="link.icon" :size="19" /><span>{{
             link.label
-          }}</span>
-</RouterLink
+          }}</span> </RouterLink
         ><RouterLink
           v-if="auth.isAdmin"
           to="/users"
           :class="{ active: route.path === '/users' }"
           @click="mobileOpen = false"
-          >
-<UserCog :size="19" /><span>使用者管理</span>
-</RouterLink
         >
+          <UserCog :size="19" /><span>使用者管理</span>
+        </RouterLink>
       </nav>
       <div class="sidebar-note">
         <span class="live-dot" /><strong>每次流轉，都有跡可循</strong>
-        <p>集中管理設備，保留完整歷史。<br>為團隊的每一天做好準備。</p>
+        <p>集中管理設備，保留完整歷史。<br />為團隊的每一天做好準備。</p>
       </div>
       <div class="profile">
         <span class="avatar">{{ auth.user?.name.slice(0, 1) }}</span>

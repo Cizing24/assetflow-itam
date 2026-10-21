@@ -92,7 +92,7 @@ function complete(o: Offboarding) {
           type="search"
           aria-label="搜尋交接員工"
           placeholder="搜尋交接員工姓名…"
-        >
+        />
       </div>
       <select v-model="filters.active" aria-label="交接狀態">
         <option value="true">交接中</option>
@@ -105,16 +105,14 @@ function complete(o: Offboarding) {
       :error="error"
       :empty="!data?.items.length"
       @retry="reload"
-      >
-<div class="offboarding-list">
+    >
+      <div class="offboarding-list">
         <article v-for="o in data?.items" :key="o.id" class="offboarding-card">
           <header>
             <span class="avatar">{{ o.employee.name.slice(0, 1) }}</span>
             <div>
-              <RouterLink :to="`/employees/${o.employee.id}`"
-                >
-<h2>{{ o.employee.name }}</h2>
-</RouterLink
+              <RouterLink :to="`/employees/${o.employee.id}`">
+                <h2>{{ o.employee.name }}</h2> </RouterLink
               ><small
                 >{{ o.employee.department.name }} · 預計離職
                 {{ dateLabel(o.plannedLeaveAt) }}</small
@@ -139,14 +137,12 @@ function complete(o: Offboarding) {
             :key="a.id"
             class="handover-item"
           >
-            <RouterLink :to="`/assets/${a.assetId}`"
-              >
-<strong>{{ a.asset.name }}</strong
+            <RouterLink :to="`/assets/${a.assetId}`">
+              <strong>{{ a.asset.name }}</strong
               ><small class="mono"
                 >{{ a.asset.assetTag }} ·
                 {{ dateLabel(a.checkedOutAt) }} 領用</small
-              >
-</RouterLink
+              > </RouterLink
             ><button
               v-if="auth.canWrite && !o.completedAt"
               class="btn secondary small"
@@ -174,8 +170,7 @@ function complete(o: Offboarding) {
             </button>
           </footer>
         </article>
-      </div>
-</AsyncState
+      </div> </AsyncState
     ><Pagination v-if="data" v-model:page="page" :total="data.total" />
   </section>
   <FormDialog ref="dialog" />

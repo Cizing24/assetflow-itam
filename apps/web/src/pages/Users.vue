@@ -108,7 +108,7 @@ function edit(u: User) {
           type="search"
           aria-label="搜尋使用者"
           placeholder="搜尋姓名或電子郵件…"
-        >
+        />
       </div>
     </div>
     <AsyncState
@@ -116,8 +116,8 @@ function edit(u: User) {
       :error="error"
       :empty="!data?.items.length"
       @retry="reload"
-      >
-<div class="table-scroll">
+    >
+      <div class="table-scroll">
         <table>
           <thead>
             <tr>
@@ -158,8 +158,7 @@ function edit(u: User) {
             </tr>
           </tbody>
         </table>
-      </div>
-</AsyncState
+      </div> </AsyncState
     ><Pagination v-if="data" v-model:page="page" :total="data.total" />
   </section>
   <FormDialog ref="dialog" />
