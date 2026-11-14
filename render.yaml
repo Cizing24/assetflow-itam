@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: assetflow-live-demo
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: codex/demo-deployment-2026-11-14
+    autoDeployTrigger: off
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DEPLOYMENT_ENV
+        value: public-demo
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: "3001"
+      - key: SESSION_HOURS
+        value: "1"
+      - key: APP_ORIGIN
+        sync: false
+      - key: DATABASE_URL
+        sync: false

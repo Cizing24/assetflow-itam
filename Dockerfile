@@ -7,6 +7,7 @@ COPY apps/web/package.json apps/web/package.json
 COPY packages/shared/package.json packages/shared/package.json
 RUN npm ci
 COPY . .
+ARG VITE_DEMO_VIEWER_PASSWORD
 RUN DATABASE_URL=postgresql://build:build@localhost:5432/build npm run db:generate && npm run build
 RUN useradd --system --uid 10001 assetflow && chown -R assetflow:assetflow /app
 USER assetflow

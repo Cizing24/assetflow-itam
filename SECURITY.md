@@ -48,7 +48,7 @@ API 錯誤固定 `{ error: { code, message, requestId } }`。未知伺服器錯�
 
 `.env`、`.local`、測試輸出與 node_modules 都被忽略。`.env.example`、CI PostgreSQL 與測試字串是**隔離開發用合成憑證**。Seed 在 production 無條件拒絕，且需要 `DEMO_SEED=true`、至少 12 字元 DEMO_PASSWORD。既有帳號密碼不會因重跑 Seed 重設。
 
-GitHub 交付 helper 從作業系統 Git Credential Manager 於記憶體取得憑證，沒有寫入檔案、參數、Git remote URL 或輸出。Repository 保持 Private。
+GitHub 交付 helper 從作業系統 Git Credential Manager 於記憶體取得憑證，沒有寫入檔案、參數、Git remote URL 或輸出。Repository 現為 Public；公開展示仍不得提交任何真實 Secrets 或個資。
 
 ## 正式部署前仍需做的事
 

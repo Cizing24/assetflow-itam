@@ -38,6 +38,7 @@ jobs:
       - run: npm run format:check
       - run: npm run typecheck
       - run: npm test
+      - run: node --test scripts/provision-demo.test.mjs
       - run: npm run test:api
       - name: Date regressions on a non-business host timezone
         run: npm test && npm run test:api
