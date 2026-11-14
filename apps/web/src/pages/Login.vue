@@ -3,8 +3,10 @@ import { ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { ArrowUpRight, Layers, ShieldCheck, Workflow } from "@lucide/vue";
 import { useAuth } from "../stores/auth";
-const email = ref(""),
-  password = ref(""),
+const demoViewerPassword = import.meta.env.VITE_DEMO_VIEWER_PASSWORD as
+  string | undefined;
+const email = ref(demoViewerPassword ? "viewer@assetflow.example.test" : ""),
+  password = ref(demoViewerPassword ?? ""),
   busy = ref(false),
   error = ref("");
 const auth = useAuth(),
@@ -60,6 +62,11 @@ async function login() {
         <span class="eyebrow">WELCOME TO YOUR WORKSPACE</span>
         <h2>登入工作空間</h2>
         <p class="muted">讓資產管理井然有序，從這裡開始。</p>
+        <p v-if="demoViewerPassword" class="notice" role="note">
+          公開唯讀
+          Demo：帳號已填入，請直接登入。所有員工及設備均為合成資料；寫入展示由操作者以獨立
+          IT 身分進行。
+        </p>
         <div v-if="route.query.expired" class="notice" role="status">
           登入狀態已到期，請重新登入。
         </div>
