@@ -1,11 +1,11 @@
 # AssetFlow 展示素材與驗證
 
-日期：2026-11-21（Asia/Taipei）。本次只更新 README、架構與展示文件、媒體，沒有變更產品功能、套件版本或部署設定。
+日期：2026-11-21（Asia/Taipei）。以下記錄前輪 README 與媒體交付，當時沒有變更產品功能、套件版本或部署設定。本輪依賴安全修復與 PR 整合另見 [安全修復紀錄](SECURITY_INTEGRATION_2026-11-21.md)。
 
 ## 基準與保留範圍
 
 - 程式基準為 `main` 的 `7a698fbcd8bbffb4e46ec434a310690973aab77a`，對應 [成功的 CI](https://github.com/Cizing24/assetflow-itam/actions/runs/39593727102)。
-- 文件分支從既有 [README PR #1](https://github.com/Cizing24/assetflow-itam/pull/1) 的 `7ddd547` 建立；新 PR 以 `docs/readme-portfolio-overview` 為 base，避免覆蓋尚未合併的 README 成果。沒有合併任何 PR。
+- 文件分支從既有 [README PR #1](https://github.com/Cizing24/assetflow-itam/pull/1) 的 `7ddd547` 建立；新 PR 以 `docs/readme-portfolio-overview` 為 base，避免覆蓋尚未合併的 README 成果。前輪交付時沒有合併任何 PR。
 - [部署準備 PR #2](https://github.com/Cizing24/assetflow-itam/pull/2) 仍獨立保留，未納入或部署。本次查核 Repository 為 Public；服務仍僅在本機執行。
 - 原工作目錄的未追蹤設定與既有開發成果保持原樣；本次使用獨立 worktree。
 
@@ -40,7 +40,7 @@
 
 README 的 Mermaid 與 [架構文件](../ARCHITECTURE.md) 都只描述實際存在的元件；沒有 Redis、訊息佇列、外部身分服務或多租戶層。沿用現有 [ADR](../DECISIONS.md)，未為展示工作新增無必要決策。
 
-## 本次驗證
+## 前輪展示驗證
 
 使用本次新建的獨立 PostgreSQL 18 叢集；展示庫與 `_test` 測試庫分開，沒有連接原本開發庫或正式環境。
 
@@ -63,6 +63,6 @@ README 的 Mermaid 與 [架構文件](../ARCHITECTURE.md) 都只描述實際存�
 
 資產、員工、領還、維修、交接、角色與稽核均為已實作功能，並使用真實 PostgreSQL。Seed 內容是合成資料，不代表任何企業的營運成果。沒有多租戶、SSO、SMTP、忘記密碼、檔案上傳或 QR Code。
 
-未驗證實體手機、Safari／Firefox、長時間壓力、完整無障礙及第三方滲透測試。本次沒有部署公開服務、合併 PR 或升級弱點套件。
+未驗證實體手機、Safari／Firefox、長時間壓力、完整無障礙及第三方滲透測試。前輪沒有部署公開服務、合併 PR 或升級弱點套件；後續安全修補與整合另記於上方連結。
 
 中文潤飾保留命令、日期、數字、連結、風險與既有真實協作聲明；將抽象宣傳改成具體操作和可回查的測試，沒有增添個人經歷或商業成效。
