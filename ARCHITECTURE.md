@@ -2,6 +2,8 @@
 
 AssetFlow 是模組化單體。前端與 API 分開開發，正式編譯結果可由一個 Fastify 程序同源提供；PostgreSQL 是業務資料與 Session 的唯一持久化來源。
 
+2026-11-21 展示文件更新已核對 `7a698fb` 的實作：graphify 對 56 個受版本控制的程式檔抽取出 293 個節點、948 條關係，再逐項對照下方入口。SQL parser 缺少選用的 `tree_sitter_sql`，因此 3 份 Migration 以原始 SQL 人工核對；Prisma schema 亦另讀原始檔。這些是分析覆蓋範圍，不是測試通過數。
+
 ```mermaid
 flowchart LR
   V[Vue Pages / Dialogs] --> C[API Client]
@@ -65,5 +67,7 @@ Pinia 僅保存登入使用者與已還原狀態。CSRF token 保存在 API clie
 - CI：Linux 乾淨安裝與真實 PostgreSQL，另建 Docker image 並執行 Compose smoke。
 
 沒有 Redis、微服務、訊息佇列或分散式鎖。單一 PostgreSQL 的交易與鎖已能正確處理預期數十至數百設備的規模。
+
+本次新增展示影片使用編譯模式，瀏覽器與 API 同源；畫面中的建立、編輯及領還均呼叫上述真實服務，沒有替換 API 或預先寫入成功畫面。範例帳號與資料僅存在隔離展示庫。
 
 HTTP `preSerialization` 僅將六個 DATE 欄位的 Prisma Date carrier（包括巢狀物件）轉為純日期；Timestamp 保留 ISO UTC、Decimal 保留字串、既有 Audit JSON 保留原樣。前端與後端同用 `packages/shared/src/dates.ts`，業務日期不依賴主機時區。
